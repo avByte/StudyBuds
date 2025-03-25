@@ -1,2 +1,2 @@
 # StudyBuds
-CP317 Group 4
+CP317 Project Group 4
