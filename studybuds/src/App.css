@@ -164,3 +164,38 @@ p {
   color: #ff6666;
   font-size: 0.9rem;
 }
+
+.option-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.option-group button {
+  background-color: #3a3f58;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  color: #f0f0f0;
+  cursor: pointer;
+}
+
+.option-group button.selected {
+  background-color: #6c79a8;
+}
+
+select {
+  background-color: #1e1e1e;
+  color: #f0f0f0;
+  border: 1px solid #444;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+select:focus {
+  outline: none;
+  border-color: #6c79a8;
+}

@@ -2,19 +2,21 @@
 import React, { useState } from "react";
 import { auth } from "./firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 
 function CreateAccount() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleSignup = async (e) => {
     e.preventDefault();
     setError("");
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      alert("Account created successfully!");
+      navigate("/questionnaire"); // Redirect to questionnaire after signup
     } catch (err) {
       setError(err.message);
     }
@@ -46,7 +48,7 @@ function CreateAccount() {
           required
         />
         <button type="submit">Sign Up</button>
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        {error && <p className="error">{error}</p>}
       </form>
     </div>
   );
