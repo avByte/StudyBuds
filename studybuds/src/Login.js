@@ -38,7 +38,7 @@ function Login() {
           required
         />
         <button type="submit">Log In</button>
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        {error && <p className="error">{error}</p>}
       </form>
     </div>
   );

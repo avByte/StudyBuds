@@ -4,15 +4,21 @@ import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import CreateAccount from "./CreateAccount";
 import Login from "./Login";
 import "./App.css";
-
+import logo from "./studybuds-logo.png"; 
 
 function App() {
   return (
     <Router>
       <div className="App">
-        <nav>
-          <Link to="/login">Login</Link> |{" "}
+        <nav className="navbar">
+        <div className="nav-left">
+          <img src={logo} alt="Study Buds Logo" className="logo" />
+          <span className="logo-text">Study Buds</span>
+        </div>
+        <div className="nav-links">
+          <Link to="/login">Login</Link>
           <Link to="/create-account">Create Account</Link>
+        </div>
         </nav>
         <Routes>
           <Route path="/login" element={<Login />} />
