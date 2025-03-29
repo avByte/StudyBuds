@@ -75,3 +75,6 @@ build/Release
 
 # dataconnect generated files
 .dataconnect
+
+# Mac DS
+.DS_Store
