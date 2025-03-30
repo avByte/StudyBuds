@@ -1,4 +1,9 @@
 // src/Login.js
+
+// we do a little tomfoolery
+import Cookies from 'js-cookie';
+
+// imports
 import React, { useState } from "react";
 import { auth } from "./firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
@@ -15,6 +20,9 @@ function Login() {
     setError("");
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      // const userAuth = getAuth();
+      Cookies.set('authToken', auth);
+
       navigate("/calendar"); 
     } catch (err) {
       setError(err.message);
