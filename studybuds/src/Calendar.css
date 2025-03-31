@@ -1,10 +1,10 @@
-.calendar-container {  /* calendar container*/
+.calendar-container {
   padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
 }
 
-.calendar-header { /* calendar header*/
+.calendar-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -17,9 +17,6 @@
   font-size: 1.5rem;
 }
 
-
-
-/* FullCalendar Base Styling */
 .fc {
   background: #282c34;
   color: #f0f0f0;
@@ -33,7 +30,7 @@
   font-weight: 500;
 }
 
-.fc .fc-month/year {
+.fc .fc-month\/year {
   color: #f0f0f0;
   font-size: 1.5rem;
   font-weight: 500;
@@ -60,7 +57,6 @@
   border-color: #6c79a8;
 }
 
-/* Header Bar Customization */
 .fc .fc-col-header-cell {
   background-color: #3a3f58;
   color: #f0f0f0;
@@ -98,7 +94,6 @@
   border-color: #8a95b8;
 }
 
-/* Window Styling */
 .window-overlay {
   position: fixed;
   top: 0;
@@ -176,7 +171,6 @@
   background-color: #505776;
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .calendar-container {
     padding: 1rem;
@@ -194,7 +188,6 @@
   }
 }
 
-/* Event Details Modal */
 .event-details {
   margin: 1.5rem 0;
   text-align: left;
@@ -229,7 +222,6 @@
   background-color: #218838 !important;
 }
 
-/* Time Input Styling */
 .time-inputs {
   display: flex;
   gap: 1rem;
@@ -254,7 +246,7 @@
   border-radius: 4px;
   background-color: #2a2f3d;
   color: #f0f0f0;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .time-input-group input[type="time"]::-webkit-calendar-picker-indicator {
