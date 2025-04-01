@@ -6,6 +6,7 @@ import { auth, db } from './firebase';
 import { collection, addDoc, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import './Calendar.css';
 import { useNavigate } from 'react-router-dom';
+import Split from './Split'; 
 
 function Calendar() {
   const navigate = useNavigate();
@@ -97,8 +98,7 @@ function Calendar() {
   };
 
   const handleSplitMaterial = () => {
-    // TODO: Implement course material splitting functionality
-    alert('Course material splitting feature coming soon!'); 
+     setShowSplit(true);
   };
 
   const formatDate = (dateString) => { // formats the date 
@@ -215,6 +215,7 @@ function Calendar() {
               </button>
               <button className="split-btn" onClick={handleSplitMaterial}>
                 Split Up Course Material
+
               </button>
               <button onClick={() => setViewEvent(false)}>
                 Close
