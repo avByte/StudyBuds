@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import './MatchMaking.css';
 import { auth, db } from './firebase';
 import { collection, query, where, getDocs, doc, getDoc, addDoc } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 
 function MatchMaking() {
+  const navigate = useNavigate();
   console.log('MatchMaking component initialized');
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [potentialMatches, setPotentialMatches] = useState([]);
 
@@ -61,10 +62,12 @@ function MatchMaking() {
     if (!currentUser) return;
 
     try {
-      // Create a new match document
+      // Create a new match document with pending status
       const matchData = {
         users: [currentUser.uid, matchedUserId],
-        timestamp: new Date(),
+        initiatorId: currentUser.uid,
+        status: 'pending',
+        createdAt: new Date(),
         userDetails: {
           [currentUser.uid]: {
             email: currentUser.email,
@@ -77,8 +80,11 @@ function MatchMaking() {
         }
       };
 
-      await addDoc(collection(db, 'matches'), matchData);
-      console.log('Match created successfully');
+      const matchRef = await addDoc(collection(db, 'matches'), matchData);
+      console.log('Pending match created successfully');
+      
+      // Navigate to chat with the new match
+      navigate('/chat', { state: { newMatchId: matchRef.id } });
     } catch (error) {
       console.error('Error creating match:', error);
     }
@@ -88,10 +94,8 @@ function MatchMaking() {
     if (currentIndex < potentialMatches.length) {
       const currentMatch = potentialMatches[currentIndex];
       if (direction === 'right') {
-        // Create match in Firebase
+        // Create match in Firebase and navigate to chat
         await createMatch(currentMatch.id);
-        // Add to local matches state
-        setMatches(prev => [...prev, currentMatch]);
       }
       setCurrentIndex(prev => prev + 1);
     }

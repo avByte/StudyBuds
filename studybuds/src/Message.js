@@ -1,4 +1,4 @@
-import { db } from './firebase';
+import { auth, db } from './firebase';
 import { 
     collection, 
     query, 
@@ -7,54 +7,76 @@ import {
     addDoc, 
     orderBy, 
     onSnapshot,
-    serverTimestamp 
+    serverTimestamp,
+    updateDoc,
+    doc 
 } from 'firebase/firestore';
-import { auth } from './firebase';
 
+// Get all matches for the current user (both pending and accepted)
 export const getMatches = async () => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return [];
+    const user = auth.currentUser;
+    if (!user) return [];
 
     try {
         const matchesRef = collection(db, 'matches');
-        const q = query(matchesRef, where('users', 'array-contains', currentUser.uid));
+        // Get matches where user is either the initiator or the receiver
+        const q = query(
+            matchesRef,
+            where('users', 'array-contains', user.uid)
+        );
         const querySnapshot = await getDocs(q);
         
-        const matches = [];
-        for (const doc of querySnapshot.docs) {
-            const matchData = doc.data();
-            const userDetails = {};
-            
-            // Get user details for each user in the match
-            for (const userId of matchData.users) {
-                const userDoc = await getDocs(query(collection(db, 'users'), where('uid', '==', userId)));
-                if (!userDoc.empty) {
-                    userDetails[userId] = userDoc.docs[0].data();
-                }
-            }
-            
-            matches.push({
-                id: doc.id,
-                ...matchData,
-                userDetails
-            });
-        }
-        
-        return matches;
+        return querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            isPending: doc.data().status === 'pending',
+            isInitiator: doc.data().initiatorId === user.uid
+        }));
     } catch (error) {
         console.error('Error getting matches:', error);
         return [];
     }
 };
 
+// Accept a match request
+export const acceptMatch = async (matchId) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+        const matchRef = doc(db, 'matches', matchId);
+        await updateDoc(matchRef, {
+            status: 'accepted',
+            acceptedAt: serverTimestamp()
+        });
+        console.log('Match accepted successfully');
+    } catch (error) {
+        console.error('Error accepting match:', error);
+    }
+};
+
+// Decline a match request
+export const declineMatch = async (matchId) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+        const matchRef = doc(db, 'matches', matchId);
+        await updateDoc(matchRef, {
+            status: 'declined',
+            declinedAt: serverTimestamp()
+        });
+        console.log('Match declined successfully');
+    } catch (error) {
+        console.error('Error declining match:', error);
+    }
+};
+
+// Get chat messages for a specific match
 export const getChatMessages = async (matchId) => {
     try {
-        const messagesRef = collection(db, 'messages');
-        const q = query(
-            messagesRef,
-            where('matchId', '==', matchId),
-            orderBy('timestamp', 'asc')
-        );
+        const messagesRef = collection(db, `matches/${matchId}/messages`);
+        const q = query(messagesRef, orderBy('timestamp', 'asc'));
         const querySnapshot = await getDocs(q);
         
         return querySnapshot.docs.map(doc => ({
@@ -67,13 +89,10 @@ export const getChatMessages = async (matchId) => {
     }
 };
 
+// Subscribe to real-time messages
 export const subscribeToMessages = (matchId, callback) => {
-    const messagesRef = collection(db, 'messages');
-    const q = query(
-        messagesRef,
-        where('matchId', '==', matchId),
-        orderBy('timestamp', 'asc')
-    );
+    const messagesRef = collection(db, `matches/${matchId}/messages`);
+    const q = query(messagesRef, orderBy('timestamp', 'asc'));
     
     return onSnapshot(q, (snapshot) => {
         const messages = snapshot.docs.map(doc => ({
@@ -84,20 +103,27 @@ export const subscribeToMessages = (matchId, callback) => {
     });
 };
 
+// Send a new message (only if match is accepted)
 export const sendMessage = async (matchId, content) => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) throw new Error('User not authenticated');
+    const user = auth.currentUser;
+    if (!user || !content.trim()) return;
 
     try {
-        const messagesRef = collection(db, 'messages');
+        // Check if match is accepted
+        const matchRef = doc(db, 'matches', matchId);
+        const matchDoc = await getDocs(matchRef);
+        if (!matchDoc.exists() || matchDoc.data().status !== 'accepted') {
+            throw new Error('Cannot send message - match not accepted');
+        }
+
+        const messagesRef = collection(db, `matches/${matchId}/messages`);
         await addDoc(messagesRef, {
-            matchId,
-            content,
-            senderId: currentUser.uid,
+            content: content.trim(),
+            senderId: user.uid,
+            senderName: user.displayName || user.email,
             timestamp: serverTimestamp()
         });
     } catch (error) {
         console.error('Error sending message:', error);
-        throw error;
     }
 };
