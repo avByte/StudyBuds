@@ -7,7 +7,6 @@ import { collection, addDoc, query, where, getDocs, deleteDoc, doc, getDoc, upda
 import './Calendar.css';
 import { useNavigate } from 'react-router-dom';
 import Split from './Split';
-import axios from 'axios';
 
 function Calendar() {
   const navigate = useNavigate();
@@ -156,11 +155,23 @@ function Calendar() {
 
   const handleShareEvent = async (eventId) => {
     try {
-      const response = await axios.post('http://localhost:5000/share-calendar', {
-        eventId,
-        sharedWith: shareEmail
+      const response = await fetch('http://localhost:5000/share-calendar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eventId,
+          sharedWith: shareEmail
+        })
       });
-      alert(response.data.message);
+      
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      
+      const data = await response.json();
+      alert(data.message);
       setShareEmail(''); 
     } catch (error) {
       console.error('Error sharing event:', error);
