@@ -10,7 +10,8 @@ function Chat() {
     const [selectedMatch, setSelectedMatch] = useState(null);
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
-    const [loading, setLoading] = useState(true);
+    const messagesEndRef = useRef(null);
+    const unsubscribeRef = useRef(null);
 
     useEffect(() => {
         const fetchMatches = async () => {
@@ -34,14 +35,28 @@ function Chat() {
     }, [location.state?.newMatchId]);
 
     useEffect(() => {
-        if (!selectedMatch) return;
-
-        const unsubscribe = subscribeToMessages(selectedMatch.id, (updatedMessages) => {
-            setMessages(updatedMessages);
-        });
-
-        return () => unsubscribe();
+        if (selectedMatch) {
+            loadMessages(selectedMatch.id);
+        }
     }, [selectedMatch]);
+
+    const loadMatches = async () => {
+        const userMatches = await getMatches();
+        setMatches(userMatches);
+    };
+
+    const loadMessages = async (matchId) => {
+        // Unsubscribe from previous chat if exists
+        if (unsubscribeRef.current) {
+            unsubscribeRef.current();
+        }
+
+        // Subscribe to real-time messages
+        unsubscribeRef.current = subscribeToMessages(matchId, (updatedMessages) => {
+            setMessages(updatedMessages);
+            scrollToBottom();
+        });
+    };
 
     const handleMatchSelect = async (match) => {
         setSelectedMatch(match);
@@ -53,7 +68,7 @@ function Chat() {
         e.preventDefault();
         if (!selectedMatch || !newMessage.trim()) return;
 
-        await sendMessage(selectedMatch.id, newMessage);
+        await sendMessage(selectedMatch.id, newMessage.trim());
         setNewMessage('');
     };
 
@@ -84,9 +99,11 @@ function Chat() {
     };
 
     const getMatchedUserDetails = (match) => {
+        if (!match || !match.users || !match.userDetails) return null;
+        
         const currentUser = auth.currentUser;
-        const otherUserId = match.users.find(id => id !== currentUser.uid);
-        return match.userDetails[otherUserId];
+        const matchedUserId = match.users.find(id => id !== currentUser.uid);
+        return match.userDetails[matchedUserId];
     };
 
     if (loading) {
@@ -96,12 +113,16 @@ function Chat() {
     return (
         <div className="chat-container">
             <div className="matches-list">
-                <div className="chat-header">Study Buddy Matches</div>
+                <h2>Your Study Buddies</h2>
                 {matches.length === 0 ? (
-                    <div className="no-matches">No matches yet</div>
+                    <div className="no-matches">
+                        No matches yet. Start swiping to find study buddies!
+                    </div>
                 ) : (
                     matches.map(match => {
                         const matchedUser = getMatchedUserDetails(match);
+                        if (!matchedUser) return null;
+                        
                         return (
                             <div 
                                 key={match.id} 
@@ -110,28 +131,7 @@ function Chat() {
                             >
                                 <div className="match-info">
                                     <div className="match-name">{matchedUser.fullName}</div>
-                                    <div className="match-status">
-                                        {match.status === 'pending' && (
-                                            <>
-                                                {match.isInitiator ? (
-                                                    <span className="pending-text">Waiting for response...</span>
-                                                ) : (
-                                                    <div className="match-actions">
-                                                        <button onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleAcceptMatch(match.id);
-                                                        }}>Accept</button>
-                                                        <button onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDeclineMatch(match.id);
-                                                        }}>Decline</button>
-                                                    </div>
-                                                )}
-                                            </>
-                                        )}
-                                        {match.status === 'accepted' && <span className="accepted-text">Connected</span>}
-                                        {match.status === 'declined' && <span className="declined-text">Declined</span>}
-                                    </div>
+                                    <div className="match-email">{matchedUser.email}</div>
                                 </div>
                             </div>
                         );
@@ -145,7 +145,7 @@ function Chat() {
                 ) : (
                     <>
                         <div className="chat-header">
-                            {getMatchedUserDetails(selectedMatch).fullName}
+                            <h3>{getMatchedUserDetails(selectedMatch).fullName}</h3>
                         </div>
                         <div className="messages-container">
                             {selectedMatch.status === 'pending' ? (
