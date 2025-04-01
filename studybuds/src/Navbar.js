@@ -28,15 +28,22 @@ function Navbar() {
         <span className="logo-text">Study Buds</span>
       </div>
       <div className="nav-links">
-        {!user ? (
-          <>
-            <Link to="/login">Login</Link>
-            <Link to="/create-account">Create Account</Link>
-          </>
-        ) : (
-          <button onClick={handleLogout}>Logout</button>
+        <div className="nav-left-links">
+          {!user ? (
+            <>
+              <Link to="/login">Login</Link>
+              <Link to="/create-account">Create Account</Link>
+            </>
+          ) : (
+            <Link to="/calendar">Calendar</Link>
+          )}
+        </div>
+
+        {user && (
+          <div className="nav-right-links">
+            <button onClick={handleLogout}>Logout</button>
+          </div>
         )}
-        <Link to="/calendar">Calendar</Link>
       </div>
     </nav>
   );

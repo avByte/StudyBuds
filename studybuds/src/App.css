@@ -49,7 +49,11 @@
 .nav-left {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1.5rem;
+}
+
+.nav-right {
+  margin-left: auto;
 }
 
 .logo {
@@ -202,4 +206,33 @@ select {
 select:focus {
   outline: none;
   border-color: #6c79a8;
+}
+
+.nav-links {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.nav-auth-links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.nav-auth-links button {
+  background: none;
+  border: none;
+  color: #9dc4ff;
+  font-weight: 500;
+  font-size: 1rem;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.nav-auth-links button:hover {
+  color: #ffffff;
 }
