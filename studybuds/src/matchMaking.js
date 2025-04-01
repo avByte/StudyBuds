@@ -1,78 +1,64 @@
 import React, { useState, useEffect } from 'react';
 import './MatchMaking.css';
-
-// Test users data
-const testUsers = [
-  {
-    id: 'test1',
-    fullName: 'Sarah Chen',
-    email: 'sarah.chen@test.com',
-    studyHoursPerDay: '4-6',
-    partnerStudyHours: '4-6',
-    environment: 'Moderately quiet',
-    sessionType: 'Interactive',
-    studyTechniques: ['Flashcards', 'Practice exams', 'Active recall'],
-    questionnaireCompleted: true
-  },
-  {
-    id: 'test2',
-    fullName: 'Michael Rodriguez',
-    email: 'michael.r@test.com',
-    studyHoursPerDay: '6-9',
-    partnerStudyHours: '6-9',
-    environment: 'Completely silent',
-    sessionType: 'Independent',
-    studyTechniques: ['Making notes/Cornell notes', 'Mind maps', 'Spaced repetition'],
-    questionnaireCompleted: true
-  },
-  {
-    id: 'test3',
-    fullName: 'Emma Thompson',
-    email: 'emma.t@test.com',
-    studyHoursPerDay: '1-3',
-    partnerStudyHours: '1-3',
-    environment: 'Moderately loud',
-    sessionType: 'Mixed',
-    studyTechniques: ['Pomodoro technique', 'Flashcards', 'Active recall'],
-    questionnaireCompleted: true
-  },
-  {
-    id: 'test4',
-    fullName: 'James Wilson',
-    email: 'james.w@test.com',
-    studyHoursPerDay: '>9',
-    partnerStudyHours: '4-6',
-    environment: 'Moderately quiet',
-    sessionType: 'Hybrid',
-    studyTechniques: ['Practice exams', 'Spaced repetition', 'Mind maps'],
-    questionnaireCompleted: true
-  },
-  {
-    id: 'test5',
-    fullName: 'Sophia Patel',
-    email: 'sophia.p@test.com',
-    studyHoursPerDay: '4-6',
-    partnerStudyHours: '6-9',
-    environment: 'Completely silent',
-    sessionType: 'Interactive',
-    studyTechniques: ['Making notes/Cornell notes', 'Active recall', 'Pomodoro technique'],
-    questionnaireCompleted: true
-  }
-];
+import { auth, db } from './firebase';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 
 function MatchMaking() {
+  console.log('MatchMaking component initialized');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [matches, setMatches] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [potentialMatches, setPotentialMatches] = useState([]);
 
   useEffect(() => {
-    // Set loading to false immediately since we're using hardcoded data
-    setLoading(false);
+    console.log('Starting to fetch potential matches...');
+    const fetchPotentialMatches = async () => {
+      const user = auth.currentUser;
+      console.log('Current user:', user?.email);
+      if (!user) {
+        console.log('No user logged in');
+        return;
+      }
+
+      try {
+        // Get all users who have completed the questionnaire
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, 
+          where('questionnaireCompleted', '==', true)
+        );
+        const querySnapshot = await getDocs(q);
+        console.log('Found users:', querySnapshot.size);
+        
+        // Filter out current user and get profiles for each remaining user
+        const matchesPromises = querySnapshot.docs
+          .filter(doc => doc.data().email !== user.email)
+          .map(async (userDoc) => {
+            console.log('Processing user:', userDoc.data().email);
+            const profileDoc = await getDoc(doc(db, 'profiles', userDoc.id));
+            console.log('Profile exists:', profileDoc.exists());
+            return {
+              id: userDoc.id,
+              ...userDoc.data(),
+              ...profileDoc.data()
+            };
+          });
+
+        const matches = await Promise.all(matchesPromises);
+        console.log('Final matches:', matches);
+        setPotentialMatches(matches);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching matches:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchPotentialMatches();
   }, []);
 
   const handleSwipe = (direction) => {
-    if (currentIndex < testUsers.length) {
-      const currentMatch = testUsers[currentIndex];
+    if (currentIndex < potentialMatches.length) {
+      const currentMatch = potentialMatches[currentIndex];
       if (direction === 'right') {
         // Add to matches
         setMatches(prev => [...prev, currentMatch]);
@@ -98,7 +84,7 @@ function MatchMaking() {
     return <div className="loading">Loading...</div>;
   }
 
-  if (currentIndex >= testUsers.length) {
+  if (currentIndex >= potentialMatches.length) {
     return (
       <div className="no-more-matches">
         <h2>No more potential matches!</h2>
@@ -107,7 +93,7 @@ function MatchMaking() {
     );
   }
 
-  const currentMatch = testUsers[currentIndex];
+  const currentMatch = potentialMatches[currentIndex];
 
   return (
     <div className="match-making-container">
