@@ -7,6 +7,7 @@ import Questionnaire from "./Questionnaire";
 import Calendar from "./Calendar";
 import MatchMaking from "./matchMaking";
 import Friends from "./Friends";
+import Chat from "./chat";
 import "./App.css";
 import logo from "./studybuds-logo.png";
 import Navbar from "./Navbar";
@@ -49,6 +50,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Friends />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chat"
+            element={
+              <ProtectedRoute>
+                <Chat />
               </ProtectedRoute>
             }
           />
