@@ -17,6 +17,7 @@ function App() {
             <span className="logo-text">Study Buds</span>
           </div>
           <div className="nav-links">
+            <Link to="/questionnaire">Questionnaire</Link>
             <Link to="/login">Login</Link>
             <Link to="/create-account">Create Account</Link>
           </div>
