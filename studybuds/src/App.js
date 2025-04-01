@@ -5,6 +5,7 @@ import CreateAccount from "./CreateAccount";
 import Login from "./Login";
 import Questionnaire from "./Questionnaire";
 import Calendar from "./Calendar";
+import MatchMaking from "./matchMaking";
 import "./App.css";
 import logo from "./studybuds-logo.png";
 import Navbar from "./Navbar";
@@ -31,6 +32,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Questionnaire />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/match"
+            element={
+              <ProtectedRoute requireQuestionnaire={true}>
+                <MatchMaking />
               </ProtectedRoute>
             }
           />

@@ -7,7 +7,6 @@ import { collection, addDoc, query, where, getDocs, deleteDoc, doc } from 'fireb
 import './Calendar.css';
 import { useNavigate } from 'react-router-dom';
 import Split from './Split'; 
-import axios from 'axios'; // Import Axios for API calls
 
 function Calendar() {
   const navigate = useNavigate();
