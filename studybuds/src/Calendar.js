@@ -14,6 +14,8 @@ function Calendar() {
   const [viewEvent, setViewEvent] = useState(false); // visibility of event detail
   const [selectedEvent, setSelectedEvent] = useState(null); // stores 
   const [newEvent, setNewEvent] = useState({ // stores the details of a new event 
+  
+
     title: '',
     start: '',
     end: '',
@@ -21,6 +23,7 @@ function Calendar() {
     eventType: 'other'
   });
   const [showAddEventWindow, setShowAddEventWindow] = useState(false);
+  const [showSplitModal, setShowSplitModal] = useState(false);
 // event fetching
   useEffect(() => {
     fetchEvents();
@@ -98,8 +101,40 @@ function Calendar() {
   };
 
   const handleSplitMaterial = () => {
-     setShowSplit(true);
+    setShowSplitModal(true);
   };
+
+  const handleStudyPlanSubmit = async (studyEvents) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+        // Add all study events to Firestore
+        const addedEvents = [];
+        for (const event of studyEvents) {
+            const docRef = await addDoc(collection(db, 'events'), {
+                ...event,
+                userId: user.uid,
+                createdAt: new Date()
+            });
+            addedEvents.push({ id: docRef.id, ...event });
+        }
+
+        // Update local events state
+        setEvents(prevEvents => [...prevEvents, ...addedEvents]);
+        
+        // Close modals
+        setShowSplitModal(false);
+        setViewEvent(false);
+        
+        // Show success message
+        alert('Study plan has been created and added to your calendar!');
+        
+    } catch (error) {
+        console.error('Error creating study events:', error);
+        alert('Failed to create study events');
+    }
+};
 
   const formatDate = (dateString) => { // formats the date 
     const date = new Date(dateString);
@@ -224,6 +259,16 @@ function Calendar() {
           </div>
         </div>
       )}
+
+        {showSplitModal && selectedEvent && (
+        <Split
+          onClose={() => setShowSplitModal(false)}
+          onSubmit={handleStudyPlanSubmit}
+          selectedEvent={selectedEvent}
+        />
+      )}
+
+
     </div>
   );
 }
