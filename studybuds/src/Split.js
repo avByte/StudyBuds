@@ -1,133 +1,96 @@
 import React, { useState } from 'react';
 import './Split.css';
+import { auth, db } from './firebase';
+import { collection, addDoc } from 'firebase/firestore';
 
 const Split = ({ onClose, onSubmit, selectedEvent }) => {
-    const [currentStep, setCurrentStep] = useState(0);
-    const [answers, setAnswers] = useState({
-        days: '',
-        hoursPerDay: '',
-        preferredTime: '',
-        additionalCourses: 'No',
-        courses: []
-    });
-    const [error, setError] = useState('');
+    // ... existing state and questions code ...
 
-    const questions = [
-        {
-            id: 1,
-            text: "How many days do you want to split your study material across?",
-            type: "number",
-            field: "days",
-            validation: (value) => value > 0 && value <= 365,
-            errorMessage: "Please enter a number between 1 and 365"
-        },
-        {
-            id: 2,
-            text: "How many hours can you study per day?",
-            type: "number",
-            field: "hoursPerDay",
-            validation: (value) => value > 0 && value <= 24,
-            errorMessage: "Please enter a number between 1 and 24"
-        },
-        {
-            id: 3,
-            text: "What is your preferred study time?",
-            type: "select",
-            field: "preferredTime",
-            options: ["Morning", "Afternoon", "Evening", "Night"]
-        },
-        {
-            id: 4,
-            text: "Do you want to add additional courses?",
-            type: "select",
-            field: "additionalCourses",
-            options: ["Yes", "No"]
+    const createStudyPlan = async () => {
+        const user = auth.currentUser;
+        if (!user) {
+            setError("User not authenticated");
+            return;
         }
-    ];
 
-    const handleInputChange = (field, value) => {
-        setAnswers(prev => ({
-            ...prev,
-            [field]: value
-        }));
-        setError('');
-    };
-
-    const validateAndProceed = () => {
-        const currentQuestion = questions[currentStep];
-        if (currentQuestion.validation) {
-            const value = Number(answers[currentQuestion.field]);
-            if (!currentQuestion.validation(value)) {
-                setError(currentQuestion.errorMessage);
-                return;
-            }
-        }
-        
-        if (currentStep < questions.length - 1) {
-            setCurrentStep(prev => prev + 1);
-        } else {
-            createStudyPlan();
-        }
-    };
-
-    const createStudyPlan = () => {
-        const startDate = new Date(selectedEvent.start);
-        const studyEvents = [];
-        const totalDays = Number(answers.days);
-        const hoursPerDay = Number(answers.hoursPerDay);
-        
-        // Split the course material into chunks
-        const materialChunks = selectedEvent.extendedProps.courseMaterial.split('\n')
-            .filter(chunk => chunk.trim() !== '');
-        
-        const chunksPerDay = Math.ceil(materialChunks.length / totalDays);
-
-        for (let day = 0; day < totalDays; day++) {
-            const eventDate = new Date(startDate);
-            eventDate.setDate(startDate.getDate() + day);
+        try {
+            const startDate = new Date(selectedEvent.start);
+            const studyEvents = [];
+            const totalDays = Number(answers.days);
+            const hoursPerDay = Number(answers.hoursPerDay);
             
-            // Set the time based on preferred study time
-            switch (answers.preferredTime) {
-                case 'Morning':
-                    eventDate.setHours(9, 0);
-                    break;
-                case 'Afternoon':
-                    eventDate.setHours(14, 0);
-                    break;
-                case 'Evening':
-                    eventDate.setHours(18, 0);
-                    break;
-                case 'Night':
-                    eventDate.setHours(20, 0);
-                    break;
+            // Split the course material into chunks
+            const materialChunks = selectedEvent.extendedProps.courseMaterial.split('\n')
+                .filter(chunk => chunk.trim() !== '');
+            
+            const chunksPerDay = Math.ceil(materialChunks.length / totalDays);
+
+            for (let day = 0; day < totalDays; day++) {
+                const eventDate = new Date(startDate);
+                eventDate.setDate(startDate.getDate() + day);
+                
+                // Set the time based on preferred study time
+                let startHour = 9; // default to morning
+                switch (answers.preferredTime) {
+                    case 'Morning':
+                        startHour = 9;
+                        break;
+                    case 'Afternoon':
+                        startHour = 14;
+                        break;
+                    case 'Evening':
+                        startHour = 18;
+                        break;
+                    case 'Night':
+                        startHour = 20;
+                        break;
+                }
+                
+                eventDate.setHours(startHour, 0, 0);
+                const endDate = new Date(eventDate);
+                endDate.setHours(startHour + hoursPerDay, 0, 0);
+
+                const dayChunks = materialChunks.slice(
+                    day * chunksPerDay,
+                    (day + 1) * chunksPerDay
+                ).join('\n');
+
+                // Create and immediately upload each study event to Firebase
+                const studyEvent = {
+                    title: `Study Session ${day + 1}: ${selectedEvent.title}`,
+                    start: eventDate.toISOString(),
+                    end: endDate.toISOString(),
+                    courseMaterial: dayChunks,
+                    eventType: 'study',
+                    parentEventId: selectedEvent.id,
+                    userId: user.uid,
+                    createdAt: new Date().toISOString(),
+                    studyDetails: {
+                        dayNumber: day + 1,
+                        totalDays: totalDays,
+                        preferredTime: answers.preferredTime,
+                        hoursPerDay: hoursPerDay,
+                        originalEventTitle: selectedEvent.title
+                    }
+                };
+
+                // Add to Firebase
+                await addDoc(collection(db, 'events'), studyEvent);
+                studyEvents.push(studyEvent);
             }
 
-            const endDate = new Date(eventDate);
-            endDate.setHours(eventDate.getHours() + hoursPerDay);
-
-            const dayChunks = materialChunks.slice(
-                day * chunksPerDay,
-                (day + 1) * chunksPerDay
-            ).join('\n');
-
-            studyEvents.push({
-                title: `Study Session ${day + 1}`,
-                start: eventDate.toISOString(),
-                end: endDate.toISOString(),
-                courseMaterial: dayChunks,
-                eventType: 'study',
-                parentEventId: selectedEvent.id
-            });
+            // Notify parent component and close modal
+            onSubmit(studyEvents);
+            onClose();
+        } catch (error) {
+            console.error('Error creating study plan:', error);
+            setError('Failed to create study plan. Please try again.');
         }
-
-        onSubmit(studyEvents);
     };
-
-    const currentQuestion = questions[currentStep];
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content">
+        <div className="split-overlay">
+            <div className="split-content">
                 <div className="progress-bar">
                     <div 
                         className="progress" 
@@ -163,7 +126,7 @@ const Split = ({ onClose, onSubmit, selectedEvent }) => {
                     </div>
                 )}
 
-                <div className="modal-buttons">
+                <div className="split-buttons">
                     {currentStep > 0 && (
                         <button onClick={() => setCurrentStep(prev => prev - 1)}>
                             Back
