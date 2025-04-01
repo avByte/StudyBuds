@@ -6,6 +6,8 @@
 */
 
 // imports
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom"; 
 import Cookies from 'js-cookie';
 
 // function for logging in
@@ -29,7 +31,7 @@ function authCheck(){
 
 // function to force users to login
 // use case for security reasons
-function authRedirect(){
+function useAuthRedirect(){
     const navigate = useNavigate();
     useEffect(() => {
         if (!authCheck()) {
@@ -43,3 +45,5 @@ function authRedirect(){
 function authLogout(){
     Cookies.remove('authToken');
 }
+
+export { authLogin, authCheck, useAuthRedirect, authLogout };
