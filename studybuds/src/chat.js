@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { auth } from './firebase';
-import { getMatches, getChatMessages, sendMessage, subscribeToMessages, acceptMatch, declineMatch } from './Message';
+import { auth, db } from './firebase';
+import { getMatches, getChatMessages, sendMessage, subscribeToMessages, acceptMatch, declineMatch, cancelMatch } from './Message';
 import { useLocation } from 'react-router-dom';
 import './chat.css';
 
@@ -11,6 +11,7 @@ function Chat() {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const messagesEndRef = useRef(null);
     const unsubscribeRef = useRef(null);
 
@@ -62,6 +63,7 @@ function Chat() {
 
     const handleMatchSelect = async (match) => {
         setSelectedMatch(match);
+        setError(null);
         const matchMessages = await getChatMessages(match.id);
         setMessages(matchMessages);
     };
@@ -70,33 +72,68 @@ function Chat() {
         e.preventDefault();
         if (!selectedMatch || !newMessage.trim()) return;
 
-        await sendMessage(selectedMatch.id, newMessage.trim());
-        setNewMessage('');
+        try {
+            setError(null);
+            await sendMessage(selectedMatch.id, newMessage.trim());
+            setNewMessage('');
+        } catch (error) {
+            console.error('Error sending message:', error);
+            setError('Failed to send message. Please try again.');
+        }
     };
 
     const handleAcceptMatch = async (matchId) => {
-        await acceptMatch(matchId);
-        // Refresh matches list
-        const updatedMatches = await getMatches();
-        setMatches(updatedMatches);
-        
-        // Update selected match if it was the one accepted
-        if (selectedMatch?.id === matchId) {
-            const updatedMatch = updatedMatches.find(m => m.id === matchId);
-            setSelectedMatch(updatedMatch);
+        try {
+            setError(null);
+            await acceptMatch(matchId);
+            // Refresh matches list
+            const updatedMatches = await getMatches();
+            setMatches(updatedMatches);
+            
+            // Update selected match if it was the one accepted
+            if (selectedMatch?.id === matchId) {
+                const updatedMatch = updatedMatches.find(m => m.id === matchId);
+                setSelectedMatch(updatedMatch);
+            }
+        } catch (error) {
+            console.error('Error accepting match:', error);
+            setError('Failed to accept match. Please try again.');
         }
     };
 
     const handleDeclineMatch = async (matchId) => {
-        await declineMatch(matchId);
-        // Refresh matches list
-        const updatedMatches = await getMatches();
-        setMatches(updatedMatches);
-        
-        // Clear selected match if it was the one declined
-        if (selectedMatch?.id === matchId) {
-            setSelectedMatch(null);
-            setMessages([]);
+        try {
+            setError(null);
+            await declineMatch(matchId);
+            // Refresh matches list
+            const updatedMatches = await getMatches();
+            setMatches(updatedMatches);
+            
+            // Clear selected match if it was the one declined
+            if (selectedMatch?.id === matchId) {
+                setSelectedMatch(null);
+                setMessages([]);
+            }
+        } catch (error) {
+            console.error('Error declining match:', error);
+            setError('Failed to decline match. Please try again.');
+        }
+    };
+
+    const handleCancelMatch = async (matchId) => {
+        try {
+            setError(null);
+            await cancelMatch(matchId);
+            // Refresh matches list
+            const updatedMatches = await getMatches();
+            setMatches(updatedMatches);
+            // If the cancelled match was selected, clear the selection
+            if (selectedMatch?.id === matchId) {
+                setSelectedMatch(null);
+            }
+        } catch (error) {
+            setError('Failed to cancel match request');
+            console.error('Error cancelling match:', error);
         }
     };
 
@@ -116,6 +153,7 @@ function Chat() {
         <div className="chat-container">
             <div className="matches-list">
                 <div className="chat-header">Study Buddy Matches</div>
+                {error && <div className="error-message">{error}</div>}
                 {matches.length === 0 ? (
                     <div className="no-matches">No matches yet</div>
                 ) : (
@@ -131,21 +169,40 @@ function Chat() {
                             >
                                 <div className="match-info">
                                     <div className="match-name">{matchedUser.fullName}</div>
+                                    <div className="match-email">{matchedUser.email}</div>
                                     <div className="match-status">
                                         {match.status === 'pending' && (
                                             <>
                                                 {match.isInitiator ? (
-                                                    <span className="pending-text">Waiting for response...</span>
+                                                    <button 
+                                                        className="cancel-button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleCancelMatch(match.id);
+                                                        }}
+                                                    >
+                                                        Cancel Request
+                                                    </button>
                                                 ) : (
                                                     <div className="match-actions">
-                                                        <button onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleAcceptMatch(match.id);
-                                                        }}>Accept</button>
-                                                        <button onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDeclineMatch(match.id);
-                                                        }}>Decline</button>
+                                                        <button 
+                                                            className="accept-button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleAcceptMatch(match.id);
+                                                            }}
+                                                        >
+                                                            Accept
+                                                        </button>
+                                                        <button 
+                                                            className="decline-button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDeclineMatch(match.id);
+                                                            }}
+                                                        >
+                                                            Decline
+                                                        </button>
                                                     </div>
                                                 )}
                                             </>
@@ -169,6 +226,7 @@ function Chat() {
                             {getMatchedUserDetails(selectedMatch).fullName}
                         </div>
                         <div className="messages-container">
+                            {error && <div className="error-message">{error}</div>}
                             {selectedMatch.status === 'pending' ? (
                                 <div className="pending-message">
                                     {selectedMatch.isInitiator 
@@ -187,7 +245,7 @@ function Chat() {
                                     >
                                         <div className="message-content">{message.content}</div>
                                         <div className="message-time">
-                                            {message.timestamp?.toDate().toLocaleTimeString()}
+                                            {message.timestamp?.toLocaleTimeString()}
                                         </div>
                                     </div>
                                 ))

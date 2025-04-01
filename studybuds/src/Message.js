@@ -9,7 +9,9 @@ import {
     onSnapshot,
     serverTimestamp,
     updateDoc,
-    doc 
+    doc,
+    getDoc,
+    deleteDoc
 } from 'firebase/firestore';
 
 // Get all matches for the current user (both pending and accepted)
@@ -81,7 +83,8 @@ export const getChatMessages = async (matchId) => {
         
         return querySnapshot.docs.map(doc => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
+            timestamp: doc.data().timestamp?.toDate()
         }));
     } catch (error) {
         console.error('Error getting messages:', error);
@@ -97,7 +100,8 @@ export const subscribeToMessages = (matchId, callback) => {
     return onSnapshot(q, (snapshot) => {
         const messages = snapshot.docs.map(doc => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
+            timestamp: doc.data().timestamp?.toDate()
         }));
         callback(messages);
     });
@@ -111,19 +115,62 @@ export const sendMessage = async (matchId, content) => {
     try {
         // Check if match is accepted
         const matchRef = doc(db, 'matches', matchId);
-        const matchDoc = await getDocs(matchRef);
+        const matchDoc = await getDoc(matchRef);
+        
         if (!matchDoc.exists() || matchDoc.data().status !== 'accepted') {
             throw new Error('Cannot send message - match not accepted');
         }
 
         const messagesRef = collection(db, `matches/${matchId}/messages`);
-        await addDoc(messagesRef, {
+        const messageData = {
             content: content.trim(),
             senderId: user.uid,
             senderName: user.displayName || user.email,
             timestamp: serverTimestamp()
-        });
+        };
+
+        await addDoc(messagesRef, messageData);
+        console.log('Message sent successfully');
     } catch (error) {
         console.error('Error sending message:', error);
+        throw error;
+    }
+};
+
+// Cancel a match request (only for initiator)
+export const cancelMatch = async (matchId) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+        const matchRef = doc(db, 'matches', matchId);
+        const matchDoc = await getDoc(matchRef);
+        
+        if (!matchDoc.exists()) {
+            throw new Error('Match not found');
+        }
+
+        const matchData = matchDoc.data();
+        if (matchData.initiatorId !== user.uid) {
+            throw new Error('Only the initiator can cancel the match');
+        }
+
+        if (matchData.status !== 'pending') {
+            throw new Error('Can only cancel pending matches');
+        }
+
+        // Delete all messages in the chat
+        const messagesRef = collection(db, `matches/${matchId}/messages`);
+        const messagesSnapshot = await getDocs(messagesRef);
+        const deletePromises = messagesSnapshot.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
+
+        // Delete the match document
+        await deleteDoc(matchRef);
+        
+        console.log('Match and messages deleted successfully');
+    } catch (error) {
+        console.error('Error cancelling match:', error);
+        throw error;
     }
 };

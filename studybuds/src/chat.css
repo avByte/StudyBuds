@@ -200,4 +200,40 @@
 
 .declined-message {
     color: #dc3545;
+}
+
+.error-message {
+    background-color: #dc3545;
+    color: white;
+    padding: 10px;
+    margin: 10px;
+    border-radius: 4px;
+    text-align: center;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.cancel-button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.cancel-button:hover {
+    background-color: #c82333;
 } 

@@ -2,14 +2,38 @@ import React, { useState, useEffect } from 'react';
 import './MatchMaking.css';
 import { auth, db } from './firebase';
 import { collection, query, where, getDocs, doc, getDoc, addDoc } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom';
 
 function MatchMaking() {
-  const navigate = useNavigate();
   console.log('MatchMaking component initialized');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [potentialMatches, setPotentialMatches] = useState([]);
+  const [existingMatches, setExistingMatches] = useState([]);
+
+  useEffect(() => {
+    const fetchExistingMatches = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      try {
+        const matchesRef = collection(db, 'matches');
+        const q = query(
+          matchesRef,
+          where('users', 'array-contains', user.uid)
+        );
+        const querySnapshot = await getDocs(q);
+        const matches = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setExistingMatches(matches);
+      } catch (error) {
+        console.error('Error fetching existing matches:', error);
+      }
+    };
+
+    fetchExistingMatches();
+  }, []);
 
   useEffect(() => {
     console.log('Starting to fetch potential matches...');
@@ -32,7 +56,17 @@ function MatchMaking() {
         
         // Filter out current user and get profiles for each remaining user
         const matchesPromises = querySnapshot.docs
-          .filter(doc => doc.data().email !== user.email)
+          .filter(userDoc => {
+            // Filter out current user
+            if (userDoc.data().email === user.email) return false;
+            
+            // Filter out users that are already matched (pending or accepted)
+            const userId = userDoc.id;
+            return !existingMatches.some(match => 
+              match.users.includes(userId) && 
+              (match.status === 'pending' || match.status === 'accepted')
+            );
+          })
           .map(async (userDoc) => {
             console.log('Processing user:', userDoc.data().email);
             const profileDoc = await getDoc(doc(db, 'profiles', userDoc.id));
@@ -55,7 +89,7 @@ function MatchMaking() {
     };
 
     fetchPotentialMatches();
-  }, []);
+  }, [existingMatches]); // Re-fetch when existing matches change
 
   const createMatch = async (matchedUserId) => {
     const currentUser = auth.currentUser;
@@ -80,11 +114,15 @@ function MatchMaking() {
         }
       };
 
-      const matchRef = await addDoc(collection(db, 'matches'), matchData);
+      await addDoc(collection(db, 'matches'), matchData);
       console.log('Pending match created successfully');
       
-      // Navigate to chat with the new match
-      navigate('/chat', { state: { newMatchId: matchRef.id } });
+      // Update existing matches list
+      const newMatch = {
+        id: matchedUserId,
+        ...matchData
+      };
+      setExistingMatches(prev => [...prev, newMatch]);
     } catch (error) {
       console.error('Error creating match:', error);
     }
@@ -94,7 +132,7 @@ function MatchMaking() {
     if (currentIndex < potentialMatches.length) {
       const currentMatch = potentialMatches[currentIndex];
       if (direction === 'right') {
-        // Create match in Firebase and navigate to chat
+        // Create match in Firebase
         await createMatch(currentMatch.id);
       }
       setCurrentIndex(prev => prev + 1);
