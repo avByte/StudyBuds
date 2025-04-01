@@ -5,6 +5,7 @@ import CreateAccount from "./CreateAccount";
 import Login from "./Login";
 import Questionnaire from "./Questionnaire";
 import Calendar from "./Calendar";
+import FindPartners from "./FindPartners";
 import "./App.css";
 import logo from "./studybuds-logo.png";
 
@@ -21,6 +22,7 @@ function App() {
             <Link to="/login">Login</Link>
             <Link to="/create-account">Create Account</Link>
             <Link to="/calendar">Calendar</Link>
+            <Link to="/find-partners">Find Partners</Link>
           </div>
         </nav>
         
@@ -29,6 +31,7 @@ function App() {
           <Route path="/create-account" element={<CreateAccount />} />
           <Route path="/questionnaire" element={<Questionnaire />} />
           <Route path="/calendar" element={<Calendar />} />
+          <Route path="/find-partners" element={<FindPartners />} />
           <Route path="/" element={<Login />} />
         </Routes>
       </div>
