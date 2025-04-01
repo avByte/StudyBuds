@@ -5,6 +5,8 @@ import CreateAccount from "./CreateAccount";
 import Login from "./Login";
 import Questionnaire from "./Questionnaire";
 import Calendar from "./Calendar";
+import MatchMaking from "./matchMaking";
+import Chat from "./chat";
 import "./App.css";
 import logo from "./studybuds-logo.png";
 
@@ -29,6 +31,38 @@ function App() {
           <Route path="/create-account" element={<CreateAccount />} />
           <Route path="/questionnaire" element={<Questionnaire />} />
           <Route path="/calendar" element={<Calendar />} />
+          <Route
+            path="/calendar"
+            element={
+              <ProtectedRoute requireQuestionnaire={true}>
+                <Calendar />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/questionnaire"
+            element={
+              <ProtectedRoute>
+                <Questionnaire />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/match"
+            element={
+              <ProtectedRoute requireQuestionnaire={true}>
+                <MatchMaking />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chat"
+            element={
+              <ProtectedRoute requireQuestionnaire={true}>
+                <Chat />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/" element={<Login />} />
         </Routes>
       </div>

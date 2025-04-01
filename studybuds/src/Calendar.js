@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react'; 
-import FullCalendar from '@fullcalendar/react'; // import 
+import FullCalendar from '@fullcalendar/react'; 
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { auth, db } from './firebase';
-import { collection, addDoc, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, deleteDoc, doc, getDoc, updateDoc } from 'firebase/firestore';
 import './Calendar.css';
 import { useNavigate } from 'react-router-dom';
-import Split from './Split'; 
+import Split from './Split';
 
 function Calendar() {
   const navigate = useNavigate();
-  const [events, setEvents] = useState([]); // stores 
-  const [viewEvent, setViewEvent] = useState(false); // visibility of event detail
-  const [selectedEvent, setSelectedEvent] = useState(null); // stores 
-  const [newEvent, setNewEvent] = useState({ // stores the details of a new event 
+  const [events, setEvents] = useState([]); 
+  const [viewEvent, setViewEvent] = useState(false); 
+  const [selectedEvent, setSelectedEvent] = useState(null); 
+  const [newEvent, setNewEvent] = useState({ 
     title: '',
     start: '',
     end: '',
@@ -22,28 +22,30 @@ function Calendar() {
   });
   const [showAddEventWindow, setShowAddEventWindow] = useState(false);
   const [showSplitModal, setShowSplitModal] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false); // New state for share modal
-  const [friends, setFriends] = useState([]); // List of friends
-  const [selectedFriend, setSelectedFriend] = useState(''); // Selected friend for sharing
+  const [shareEmail, setShareEmail] = useState(''); // Email to share the event with
+  const [friends, setFriends] = useState([]);
+  const [showShareDropdown, setShowShareDropdown] = useState(false);
 
   useEffect(() => {
     fetchEvents();
     fetchFriends();
   }, []);
 
-  const fetchEvents = async () => { // gets the events from firebase for the logged in user
+  const fetchEvents = async () => {
     const user = auth.currentUser;
     if (!user) return;
 
     const eventsRef = collection(db, 'events');
     const q = query(eventsRef, where('userId', '==', user.uid));
-    const querySnapshot = await getDocs(q);
-    
-    const eventsData = querySnapshot.docs.map(doc => ({
+    const sharedQ = query(eventsRef, where('sharedWith', 'array-contains', user.email));
+
+    const [ownEvents, sharedEvents] = await Promise.all([getDocs(q), getDocs(sharedQ)]);
+
+    const eventsData = [...ownEvents.docs, ...sharedEvents.docs].map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
-    
+
     setEvents(eventsData);
   };
 
@@ -51,19 +53,23 @@ function Calendar() {
     const user = auth.currentUser;
     if (!user) return;
 
-    const friendsRef = collection(db, 'friends');
-    const q = query(friendsRef, where('userId', '==', user.uid));
-    const querySnapshot = await getDocs(q);
-
-    const friendsData = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    setFriends(friendsData);
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists() && userDoc.data().friends) {
+        const friendsData = await Promise.all(
+          userDoc.data().friends.map(async (friendId) => {
+            const friendDoc = await getDoc(doc(db, 'users', friendId));
+            return friendDoc.exists() ? { id: friendId, ...friendDoc.data() } : null;
+          })
+        );
+        setFriends(friendsData.filter(friend => friend !== null));
+      }
+    } catch (error) {
+      console.error('Error fetching friends:', error);
+    }
   };
 
-  const handleDateSelect = (selectInfo) => { // opens the 
+  const handleDateSelect = (selectInfo) => { 
     setNewEvent({
       ...newEvent,
       start: selectInfo.startStr,
@@ -72,12 +78,11 @@ function Calendar() {
     setShowAddEventWindow(true);
   };
 
-  const handleEventAdd = async () => { // creates a new event in firestore
+  const handleEventAdd = async () => { 
     const user = auth.currentUser;
     if (!user) return;
 
     try {
-      // Combine the selected date with the chosen time
       const eventDate = new Date(newEvent.start);
       const [hours, minutes] = newEvent.time.split(':');
       eventDate.setHours(parseInt(hours), parseInt(minutes));
@@ -85,7 +90,7 @@ function Calendar() {
       const docRef = await addDoc(collection(db, 'events'), {
         ...newEvent,
         start: eventDate.toISOString(),
-        end: eventDate.toISOString(), // Using same time for end
+        end: eventDate.toISOString(), 
         userId: user.uid,
         createdAt: new Date()
       });
@@ -104,9 +109,9 @@ function Calendar() {
     }
   };
 
-  const handleEventDelete = async () => { // 
-    if (window.confirm('Are you sure you want to delete this event?')) { // confirms if user wants 
-      try { // exception handling
+  const handleEventDelete = async () => { 
+    if (window.confirm('Are you sure you want to delete this event?')) { 
+      try { 
         await deleteDoc(doc(db, 'events', selectedEvent.id));
         setEvents(events.filter(event => event.id !== selectedEvent.id));
         setViewEvent(false);
@@ -127,7 +132,6 @@ function Calendar() {
     if (!user) return;
 
     try {
-        // Add all study events to Firestore
         const addedEvents = [];
         for (const event of studyEvents) {
             const docRef = await addDoc(collection(db, 'events'), {
@@ -138,14 +142,9 @@ function Calendar() {
             addedEvents.push({ id: docRef.id, ...event });
         }
 
-        // Update local events state
         setEvents(prevEvents => [...prevEvents, ...addedEvents]);
-        
-        // Close modals
         setShowSplitModal(false);
         setViewEvent(false);
-        
-        // Show success message
         alert('Study plan has been created and added to your calendar!');
         
     } catch (error) {
@@ -154,23 +153,69 @@ function Calendar() {
     }
   };
 
-  const handleShareCalendar = async () => {
+  const handleShareEvent = async (eventId) => {
     try {
-      if (!selectedFriend) {
-        alert('Please select a friend to share with.');
-        return;
+      const response = await fetch('http://localhost:5000/share-calendar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eventId,
+          sharedWith: shareEmail
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
       }
-
-      console.log(`Sharing calendar with: ${selectedFriend}`);
-      setShowShareModal(false);
-      alert('Calendar shared successfully!');
+      
+      const data = await response.json();
+      alert(data.message);
+      setShareEmail(''); 
     } catch (error) {
-      console.error('Error sharing calendar:', error);
-      alert('Failed to share calendar.');
+      console.error('Error sharing event:', error);
+      alert('Failed to share the event.');
     }
   };
 
-  const formatDate = (dateString) => { // formats the date 
+  const handleShareCalendar = async (friendId) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+      const friendDoc = await getDoc(doc(db, 'users', friendId));
+      if (friendDoc.exists()) {
+        const friendEmail = friendDoc.data().email;
+        const eventsRef = collection(db, 'events');
+        const q = query(eventsRef, where('userId', '==', user.uid));
+        const userEvents = await getDocs(q);
+
+        // Share all events with the friend
+        const sharePromises = userEvents.docs.map(async (eventDoc) => {
+          const eventData = eventDoc.data();
+          if (!eventData.sharedWith) {
+            eventData.sharedWith = [];
+          }
+          if (!eventData.sharedWith.includes(friendEmail)) {
+            eventData.sharedWith.push(friendEmail);
+            await updateDoc(doc(db, 'events', eventDoc.id), {
+              sharedWith: eventData.sharedWith
+            });
+          }
+        });
+
+        await Promise.all(sharePromises);
+        alert('Calendar shared successfully!');
+        setShowShareDropdown(false);
+      }
+    } catch (error) {
+      console.error('Error sharing calendar:', error);
+      alert('Failed to share calendar');
+    }
+  };
+
+  const formatDate = (dateString) => { 
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -180,7 +225,7 @@ function Calendar() {
     });
   };
 
-  const formatTime = (dateString) => { // formats the time
+  const formatTime = (dateString) => { 
     const date = new Date(dateString);
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -192,12 +237,34 @@ function Calendar() {
     <div className="calendar-container">
       <div className="calendar-header">
         <h2>Calendar</h2>
-        <button onClick={() => setShowShareModal(true)} className="share-button">
-          Share/Merge Calendar
-        </button>
+        <div className="share-calendar-container">
+          <button 
+            className="share-calendar-btn"
+            onClick={() => setShowShareDropdown(!showShareDropdown)}
+          >
+            Share Calendar
+          </button>
+          {showShareDropdown && (
+            <div className="share-dropdown">
+              {friends.length > 0 ? (
+                friends.map(friend => (
+                  <button
+                    key={friend.id}
+                    className="friend-share-btn"
+                    onClick={() => handleShareCalendar(friend.id)}
+                  >
+                    {friend.fullName}
+                  </button>
+                ))
+              ) : (
+                <p className="no-friends">No friends to share with</p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
       <div className="calendar-wrapper">
-        <FullCalendar // creates the calendar
+        <FullCalendar 
           plugins={[dayGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
           headerToolbar={{
@@ -220,7 +287,7 @@ function Calendar() {
         />
       </div>
 
-      {showAddEventWindow && ( // window for add event 
+      {showAddEventWindow && ( 
         <div className="window-overlay">
           <div className="window-content">
             <h3>Add Event</h3>
@@ -270,7 +337,7 @@ function Calendar() {
         </div>
       )}
 
-      {viewEvent && selectedEvent && ( // window for event details
+      {viewEvent && selectedEvent && ( 
         <div className="window-overlay">
           <div className="window-content">
             <h3>Event Details</h3>
@@ -304,22 +371,16 @@ function Calendar() {
         />
       )}
 
-      {showShareModal && (
-        <div className="modal">
-          <h3>Share/Merge Calendar</h3>
-          <select
-            value={selectedFriend}
-            onChange={(e) => setSelectedFriend(e.target.value)}
-          >
-            <option value="">Select a friend</option>
-            {friends.map((friend) => (
-              <option key={friend.id} value={friend.id}>
-                {friend.name}
-              </option>
-            ))}
-          </select>
-          <button onClick={handleShareCalendar}>Share</button>
-          <button onClick={() => setShowShareModal(false)}>Cancel</button>
+      {selectedEvent && (
+        <div className="share-modal">
+          <h3>Share Event</h3>
+          <input
+            type="email"
+            placeholder="Enter email to share with"
+            value={shareEmail}
+            onChange={(e) => setShareEmail(e.target.value)}
+          />
+          <button onClick={() => handleShareEvent(selectedEvent.id)}>Share</button>
         </div>
       )}
     </div>
