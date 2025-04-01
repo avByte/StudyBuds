@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { auth } from './firebase';
 import { getMatches, getChatMessages, sendMessage, subscribeToMessages, acceptMatch, declineMatch } from './Message';
 import { useLocation } from 'react-router-dom';
@@ -10,6 +10,7 @@ function Chat() {
     const [selectedMatch, setSelectedMatch] = useState(null);
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
+    const [loading, setLoading] = useState(true);
     const messagesEndRef = useRef(null);
     const unsubscribeRef = useRef(null);
 
@@ -35,27 +36,28 @@ function Chat() {
     }, [location.state?.newMatchId]);
 
     useEffect(() => {
-        if (selectedMatch) {
-            loadMessages(selectedMatch.id);
-        }
-    }, [selectedMatch]);
+        if (!selectedMatch) return;
 
-    const loadMatches = async () => {
-        const userMatches = await getMatches();
-        setMatches(userMatches);
-    };
-
-    const loadMessages = async (matchId) => {
         // Unsubscribe from previous chat if exists
         if (unsubscribeRef.current) {
             unsubscribeRef.current();
         }
 
         // Subscribe to real-time messages
-        unsubscribeRef.current = subscribeToMessages(matchId, (updatedMessages) => {
+        unsubscribeRef.current = subscribeToMessages(selectedMatch.id, (updatedMessages) => {
             setMessages(updatedMessages);
             scrollToBottom();
         });
+
+        return () => {
+            if (unsubscribeRef.current) {
+                unsubscribeRef.current();
+            }
+        };
+    }, [selectedMatch]);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
     const handleMatchSelect = async (match) => {
@@ -113,11 +115,9 @@ function Chat() {
     return (
         <div className="chat-container">
             <div className="matches-list">
-                <h2>Your Study Buddies</h2>
+                <div className="chat-header">Study Buddy Matches</div>
                 {matches.length === 0 ? (
-                    <div className="no-matches">
-                        No matches yet. Start swiping to find study buddies!
-                    </div>
+                    <div className="no-matches">No matches yet</div>
                 ) : (
                     matches.map(match => {
                         const matchedUser = getMatchedUserDetails(match);
@@ -131,7 +131,28 @@ function Chat() {
                             >
                                 <div className="match-info">
                                     <div className="match-name">{matchedUser.fullName}</div>
-                                    <div className="match-email">{matchedUser.email}</div>
+                                    <div className="match-status">
+                                        {match.status === 'pending' && (
+                                            <>
+                                                {match.isInitiator ? (
+                                                    <span className="pending-text">Waiting for response...</span>
+                                                ) : (
+                                                    <div className="match-actions">
+                                                        <button onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleAcceptMatch(match.id);
+                                                        }}>Accept</button>
+                                                        <button onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeclineMatch(match.id);
+                                                        }}>Decline</button>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                        {match.status === 'accepted' && <span className="accepted-text">Connected</span>}
+                                        {match.status === 'declined' && <span className="declined-text">Declined</span>}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -145,7 +166,7 @@ function Chat() {
                 ) : (
                     <>
                         <div className="chat-header">
-                            <h3>{getMatchedUserDetails(selectedMatch).fullName}</h3>
+                            {getMatchedUserDetails(selectedMatch).fullName}
                         </div>
                         <div className="messages-container">
                             {selectedMatch.status === 'pending' ? (
@@ -171,6 +192,7 @@ function Chat() {
                                     </div>
                                 ))
                             )}
+                            <div ref={messagesEndRef} />
                         </div>
                         {selectedMatch.status === 'accepted' && (
                             <form onSubmit={handleSendMessage} className="message-input">
