@@ -2,37 +2,40 @@
 
 // we do a little tomfoolery
 // external package that's installed
-import { authLogin } from "./CookieHandler";
+import { authLogin, authCheck } from "./CookieHandler";
 
 // imports
 import React, { useState } from "react";
 import { auth } from "./firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 
 function Login() {
   // constants
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   // handleLogin function for logging in and routing
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-    
-    try {
-      // attempt to login
-      const userCredentials = await signInWithEmailAndPassword(auth, email, password);
-      
-      // send user credentials to the backend file 
-      authLogin(userCredentials);
+    if (authCheck()) {
+      navigate("/calendar");
+    } else {
+      try {
+        // attempt to login
+        const userCredentials = await signInWithEmailAndPassword(auth, email, password);
 
-      // exit login and navigate to calendar
-      navigate("/calendar"); 
-    } catch (err) {
-      setError(err.message);
+        // send user credentials to the backend file 
+        authLogin(userCredentials);
+
+        // exit login and navigate to calendar
+        navigate("/calendar");
+      } catch (err) {
+        setError(err.message);
+      }
     }
   };
 
