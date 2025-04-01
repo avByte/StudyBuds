@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import { auth } from "./firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
+import { db } from "./firebase";
+import { doc, setDoc } from "firebase/firestore";
 
 function CreateAccount() {
   const [email, setEmail] = useState("");
@@ -15,7 +17,15 @@ function CreateAccount() {
     e.preventDefault();
     setError("");
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      await setDoc(doc(db, "users", user.uid), {
+        fullName: fullName,
+        email: email,
+        questionnaireCompleted: false
+      });
+
       navigate("/questionnaire"); // Redirect to questionnaire after signup
     } catch (err) {
       setError(err.message);
