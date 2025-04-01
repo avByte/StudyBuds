@@ -6,7 +6,6 @@ import Login from "./Login";
 import Questionnaire from "./Questionnaire";
 import Calendar from "./Calendar";
 import MatchMaking from "./matchMaking";
-import Chat from "./chat";
 import "./App.css";
 import logo from "./studybuds-logo.png";
 import Navbar from "./Navbar";
@@ -41,14 +40,6 @@ function App() {
             element={
               <ProtectedRoute requireQuestionnaire={true}>
                 <MatchMaking />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/chat"
-            element={
-              <ProtectedRoute requireQuestionnaire={true}>
-                <Chat />
               </ProtectedRoute>
             }
           />

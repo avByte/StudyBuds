@@ -1,79 +1,57 @@
 .chat-container {
     display: flex;
-    height: calc(100vh - 64px);
-    background-color: #1e1e1e;
-    color: #f0f0f0;
+    height: calc(100vh - 100px);
+    margin: 20px;
+    background: #2b2b2b !important;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+    text-align: left !important;
 }
 
 .matches-list {
-    width: 300px;
-    background-color: #2b2b2b;
+    width: 250px;
     border-right: 1px solid #444;
     overflow-y: auto;
-    padding: 20px;
+    background: #2b2b2b !important;
 }
 
 .matches-list h2 {
-    color: #9dc4ff;
-    margin-bottom: 20px;
-    font-size: 1.5rem;
+    padding: 20px;
+    margin: 0;
+    border-bottom: 1px solid #444;
+    background: #2b2b2b !important;
+    color: #f0f0f0 !important;
+    text-align: left !important;
 }
 
 .match-item {
-    padding: 15px;
-    margin-bottom: 10px;
-    background-color: #3a3f58;
-    border-radius: 8px;
+    padding: 15px 20px;
     cursor: pointer;
     transition: background-color 0.2s;
+    color: #f0f0f0 !important;
 }
 
 .match-item:hover {
-    background-color: #4a4f68;
+    background-color: #3a3f58 !important;
 }
 
 .match-item.selected {
-    background-color: #4a4f68;
-    border-left: 4px solid #9dc4ff;
-}
-
-.match-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.match-name {
-    font-weight: bold;
-    color: #f0f0f0;
-}
-
-.match-email {
-    font-size: 0.9em;
-    color: #9dc4ff;
+    background-color: #505776 !important;
+    border-left: 4px solid #6c79a8;
 }
 
 .chat-box {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background-color: #1e1e1e;
-}
-
-.chat-header {
-    padding: 20px;
-    background-color: #2b2b2b;
-    border-bottom: 1px solid #444;
-}
-
-.chat-header h3 {
-    margin: 0;
-    color: #9dc4ff;
+    background: #2b2b2b !important;
 }
 
 .messages-container {
     flex: 1;
-    padding: 20px;
     overflow-y: auto;
+    padding: 20px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -95,60 +73,71 @@
 .message-content {
     padding: 10px 15px;
     border-radius: 15px;
-    background-color: #3a3f58;
+    background: #3a3f58 !important;
+    color: #f0f0f0 !important;
 }
 
 .message.sent .message-content {
-    background-color: #2b5278;
+    background: #6c79a8 !important;
+    color: #f0f0f0 !important;
+}
+
+.message-sender {
+    font-size: 0.8em;
+    margin-bottom: 5px;
+    color: #9dc4ff !important;
+}
+
+.message.sent .message-sender {
+    color: #9dc4ff !important;
 }
 
 .message-text {
-    margin-bottom: 5px;
-}
-
-.message-time {
-    font-size: 0.8em;
-    color: #9dc4ff;
-    text-align: right;
+    word-wrap: break-word;
 }
 
 .message-input {
-    padding: 20px;
-    background-color: #2b2b2b;
     display: flex;
-    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid #444;
+    background: #2b2b2b !important;
 }
 
 .message-input input {
     flex: 1;
     padding: 10px;
+    background-color: #1e1e1e !important;
+    border: 1px solid #444;
     border-radius: 20px;
-    border: none;
-    background-color: #3a3f58;
-    color: #f0f0f0;
+    margin-right: 10px;
+    outline: none;
+    color: #f0f0f0 !important;
+}
+
+.message-input input::placeholder {
+    color: #aaa !important;
 }
 
 .message-input button {
     padding: 10px 20px;
-    border-radius: 20px;
+    background: #3a3f58 !important;
+    color: #f0f0f0 !important;
     border: none;
-    background-color: #9dc4ff;
-    color: #1e1e1e;
+    border-radius: 20px;
     cursor: pointer;
     transition: background-color 0.2s;
 }
 
 .message-input button:hover {
-    background-color: #7ba4ff;
+    background: #505776 !important;
 }
 
-.no-chat-selected, .no-messages, .no-matches {
+.no-chat-selected {
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     height: 100%;
-    color: #666;
-    font-size: 1.1em;
-    text-align: center;
-    padding: 20px;
-}
+    color: #9dc4ff !important;
+    font-size: 1.2em;
+    text-align: center !important;
+} 

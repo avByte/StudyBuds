@@ -3,10 +3,11 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { auth, db } from './firebase';
-import { collection, addDoc, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, deleteDoc, doc, getDoc, updateDoc } from 'firebase/firestore';
 import './Calendar.css';
 import { useNavigate } from 'react-router-dom';
-import Split from './Split'; 
+import Split from './Split';
+import axios from 'axios';
 
 function Calendar() {
   const navigate = useNavigate();
@@ -23,9 +24,12 @@ function Calendar() {
   const [showAddEventWindow, setShowAddEventWindow] = useState(false);
   const [showSplitModal, setShowSplitModal] = useState(false);
   const [shareEmail, setShareEmail] = useState(''); // Email to share the event with
+  const [friends, setFriends] = useState([]);
+  const [showShareDropdown, setShowShareDropdown] = useState(false);
 
   useEffect(() => {
     fetchEvents();
+    fetchFriends();
   }, []);
 
   const fetchEvents = async () => {
@@ -44,6 +48,26 @@ function Calendar() {
     }));
 
     setEvents(eventsData);
+  };
+
+  const fetchFriends = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists() && userDoc.data().friends) {
+        const friendsData = await Promise.all(
+          userDoc.data().friends.map(async (friendId) => {
+            const friendDoc = await getDoc(doc(db, 'users', friendId));
+            return friendDoc.exists() ? { id: friendId, ...friendDoc.data() } : null;
+          })
+        );
+        setFriends(friendsData.filter(friend => friend !== null));
+      }
+    } catch (error) {
+      console.error('Error fetching friends:', error);
+    }
   };
 
   const handleDateSelect = (selectInfo) => { 
@@ -144,6 +168,42 @@ function Calendar() {
     }
   };
 
+  const handleShareCalendar = async (friendId) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+      const friendDoc = await getDoc(doc(db, 'users', friendId));
+      if (friendDoc.exists()) {
+        const friendEmail = friendDoc.data().email;
+        const eventsRef = collection(db, 'events');
+        const q = query(eventsRef, where('userId', '==', user.uid));
+        const userEvents = await getDocs(q);
+
+        // Share all events with the friend
+        const sharePromises = userEvents.docs.map(async (eventDoc) => {
+          const eventData = eventDoc.data();
+          if (!eventData.sharedWith) {
+            eventData.sharedWith = [];
+          }
+          if (!eventData.sharedWith.includes(friendEmail)) {
+            eventData.sharedWith.push(friendEmail);
+            await updateDoc(doc(db, 'events', eventDoc.id), {
+              sharedWith: eventData.sharedWith
+            });
+          }
+        });
+
+        await Promise.all(sharePromises);
+        alert('Calendar shared successfully!');
+        setShowShareDropdown(false);
+      }
+    } catch (error) {
+      console.error('Error sharing calendar:', error);
+      alert('Failed to share calendar');
+    }
+  };
+
   const formatDate = (dateString) => { 
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -166,6 +226,31 @@ function Calendar() {
     <div className="calendar-container">
       <div className="calendar-header">
         <h2>Calendar</h2>
+        <div className="share-calendar-container">
+          <button 
+            className="share-calendar-btn"
+            onClick={() => setShowShareDropdown(!showShareDropdown)}
+          >
+            Share Calendar
+          </button>
+          {showShareDropdown && (
+            <div className="share-dropdown">
+              {friends.length > 0 ? (
+                friends.map(friend => (
+                  <button
+                    key={friend.id}
+                    className="friend-share-btn"
+                    onClick={() => handleShareCalendar(friend.id)}
+                  >
+                    {friend.fullName}
+                  </button>
+                ))
+              ) : (
+                <p className="no-friends">No friends to share with</p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
       <div className="calendar-wrapper">
         <FullCalendar 
