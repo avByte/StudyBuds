@@ -140,4 +140,25 @@
     color: #9dc4ff !important;
     font-size: 1.2em;
     text-align: center !important;
+}
+
+.loading-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100px;
+    color: #9dc4ff !important;
+    font-size: 1.1em;
+    text-align: center !important;
+}
+
+.error-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100px;
+    color: #ff6b6b !important;
+    font-size: 1.1em;
+    text-align: center !important;
+    padding: 0 20px;
 } 

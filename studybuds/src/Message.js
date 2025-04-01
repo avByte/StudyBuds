@@ -7,7 +7,9 @@ import {
     addDoc, 
     orderBy, 
     onSnapshot,
-    serverTimestamp 
+    serverTimestamp,
+    getDoc,
+    doc
 } from 'firebase/firestore';
 import { auth } from './firebase';
 
@@ -21,24 +23,35 @@ export const getMatches = async () => {
         const querySnapshot = await getDocs(q);
         
         const matches = [];
+        const userDetailsPromises = [];
+
         for (const doc of querySnapshot.docs) {
             const matchData = doc.data();
             const userDetails = {};
             
             // Get user details for each user in the match
             for (const userId of matchData.users) {
-                const userDoc = await getDocs(query(collection(db, 'users'), where('uid', '==', userId)));
-                if (!userDoc.empty) {
-                    userDetails[userId] = userDoc.docs[0].data();
+                if (userId !== currentUser.uid) { // Only get details for matched users, not current user
+                    const userDocRef = doc(db, 'users', userId);
+                    userDetailsPromises.push(
+                        getDoc(userDocRef).then(userDoc => {
+                            if (userDoc.exists()) {
+                                userDetails[userId] = userDoc.data();
+                            }
+                        })
+                    );
                 }
             }
             
             matches.push({
                 id: doc.id,
                 ...matchData,
-                userDetails
+                userDetails: {} // Initialize empty, will be populated after promises resolve
             });
         }
+
+        // Wait for all user details to be fetched
+        await Promise.all(userDetailsPromises);
         
         return matches;
     } catch (error) {

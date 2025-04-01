@@ -8,6 +8,8 @@ const Chat = () => {
     const [selectedMatch, setSelectedMatch] = useState(null);
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
     const messagesEndRef = useRef(null);
     const unsubscribeRef = useRef(null);
 
@@ -27,21 +29,35 @@ const Chat = () => {
     }, [selectedMatch]);
 
     const loadMatches = async () => {
-        const userMatches = await getMatches();
-        setMatches(userMatches);
+        try {
+            setIsLoading(true);
+            setError(null);
+            const userMatches = await getMatches();
+            setMatches(userMatches);
+        } catch (err) {
+            console.error('Error loading matches:', err);
+            setError('Failed to load matches. Please try again later.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const loadMessages = async (matchId) => {
-        // Unsubscribe from previous chat if exists
-        if (unsubscribeRef.current) {
-            unsubscribeRef.current();
-        }
+        try {
+            // Unsubscribe from previous chat if exists
+            if (unsubscribeRef.current) {
+                unsubscribeRef.current();
+            }
 
-        // Subscribe to real-time messages
-        unsubscribeRef.current = subscribeToMessages(matchId, (updatedMessages) => {
-            setMessages(updatedMessages);
-            scrollToBottom();
-        });
+            // Subscribe to real-time messages
+            unsubscribeRef.current = subscribeToMessages(matchId, (updatedMessages) => {
+                setMessages(updatedMessages);
+                scrollToBottom();
+            });
+        } catch (err) {
+            console.error('Error loading messages:', err);
+            setError('Failed to load messages. Please try again later.');
+        }
     };
 
     const scrollToBottom = () => {
@@ -52,8 +68,13 @@ const Chat = () => {
         e.preventDefault();
         if (!newMessage.trim() || !selectedMatch) return;
 
-        await sendMessage(selectedMatch.id, newMessage.trim());
-        setNewMessage('');
+        try {
+            await sendMessage(selectedMatch.id, newMessage.trim());
+            setNewMessage('');
+        } catch (err) {
+            console.error('Error sending message:', err);
+            setError('Failed to send message. Please try again.');
+        }
     };
 
     const getMatchedUserDetails = (match) => {
@@ -70,7 +91,15 @@ const Chat = () => {
         <div className="chat-container">
             <div className="matches-list">
                 <h2>Your Study Buddies</h2>
-                {matches.length === 0 ? (
+                {isLoading ? (
+                    <div className="loading-message">
+                        Loading matches...
+                    </div>
+                ) : error ? (
+                    <div className="error-message">
+                        {error}
+                    </div>
+                ) : matches.length === 0 ? (
                     <div className="no-matches">
                         No matches yet. Start swiping to find study buddies!
                     </div>
