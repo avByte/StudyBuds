@@ -2,7 +2,7 @@
 
 // we do a little tomfoolery
 // external package that's installed
-import Cookies from 'js-cookie';
+import { authLogin } from "./CookieHandler";
 
 // imports
 import React, { useState } from "react";
@@ -25,13 +25,9 @@ function Login() {
     try {
       // attempt to login
       const userCredentials = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredentials.user;
-
-      // build login cookie
-      if (user){
-        const idToken = await user.getIdToken();
-        Cookies.set("authToken", idToken, {secure: true, sameSite: "Strict"});
-      }
+      
+      // send user credentials to the backend file 
+      authLogin(userCredentials);
 
       // exit login and navigate to calendar
       navigate("/calendar"); 
