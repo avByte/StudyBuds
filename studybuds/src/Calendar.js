@@ -14,8 +14,6 @@ function Calendar() {
   const [viewEvent, setViewEvent] = useState(false); // visibility of event detail
   const [selectedEvent, setSelectedEvent] = useState(null); // stores 
   const [newEvent, setNewEvent] = useState({ // stores the details of a new event 
-  
-
     title: '',
     start: '',
     end: '',
@@ -24,12 +22,16 @@ function Calendar() {
   });
   const [showAddEventWindow, setShowAddEventWindow] = useState(false);
   const [showSplitModal, setShowSplitModal] = useState(false);
-// event fetching
+  const [showShareModal, setShowShareModal] = useState(false); // New state for share modal
+  const [friends, setFriends] = useState([]); // List of friends
+  const [selectedFriend, setSelectedFriend] = useState(''); // Selected friend for sharing
+
   useEffect(() => {
     fetchEvents();
+    fetchFriends();
   }, []);
 
-  const fetchEvents = async () => { // gets the vents fromf irebase for the logged in user
+  const fetchEvents = async () => { // gets the events from firebase for the logged in user
     const user = auth.currentUser;
     if (!user) return;
 
@@ -43,6 +45,22 @@ function Calendar() {
     }));
     
     setEvents(eventsData);
+  };
+
+  const fetchFriends = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const friendsRef = collection(db, 'friends');
+    const q = query(friendsRef, where('userId', '==', user.uid));
+    const querySnapshot = await getDocs(q);
+
+    const friendsData = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    setFriends(friendsData);
   };
 
   const handleDateSelect = (selectInfo) => { // opens the 
@@ -134,7 +152,23 @@ function Calendar() {
         console.error('Error creating study events:', error);
         alert('Failed to create study events');
     }
-};
+  };
+
+  const handleShareCalendar = async () => {
+    try {
+      if (!selectedFriend) {
+        alert('Please select a friend to share with.');
+        return;
+      }
+
+      console.log(`Sharing calendar with: ${selectedFriend}`);
+      setShowShareModal(false);
+      alert('Calendar shared successfully!');
+    } catch (error) {
+      console.error('Error sharing calendar:', error);
+      alert('Failed to share calendar.');
+    }
+  };
 
   const formatDate = (dateString) => { // formats the date 
     const date = new Date(dateString);
@@ -158,6 +192,9 @@ function Calendar() {
     <div className="calendar-container">
       <div className="calendar-header">
         <h2>Calendar</h2>
+        <button onClick={() => setShowShareModal(true)} className="share-button">
+          Share/Merge Calendar
+        </button>
       </div>
       <div className="calendar-wrapper">
         <FullCalendar // creates the calendar
@@ -250,7 +287,6 @@ function Calendar() {
               </button>
               <button className="split-btn" onClick={handleSplitMaterial}>
                 Split Up Course Material
-
               </button>
               <button onClick={() => setViewEvent(false)}>
                 Close
@@ -260,7 +296,7 @@ function Calendar() {
         </div>
       )}
 
-        {showSplitModal && selectedEvent && (
+      {showSplitModal && selectedEvent && (
         <Split
           onClose={() => setShowSplitModal(false)}
           onSubmit={handleStudyPlanSubmit}
@@ -268,9 +304,26 @@ function Calendar() {
         />
       )}
 
-
+      {showShareModal && (
+        <div className="modal">
+          <h3>Share/Merge Calendar</h3>
+          <select
+            value={selectedFriend}
+            onChange={(e) => setSelectedFriend(e.target.value)}
+          >
+            <option value="">Select a friend</option>
+            {friends.map((friend) => (
+              <option key={friend.id} value={friend.id}>
+                {friend.name}
+              </option>
+            ))}
+          </select>
+          <button onClick={handleShareCalendar}>Share</button>
+          <button onClick={() => setShowShareModal(false)}>Cancel</button>
+        </div>
+      )}
     </div>
   );
 }
 
-export default Calendar; 
+export default Calendar;
