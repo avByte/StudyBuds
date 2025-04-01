@@ -1,11 +1,15 @@
 // src/App.js
-import React from "react";
-import { HashRouter as Router, Routes, Route, Link } from "react-router-dom";
+
+// frontend imports
+import "./App.css";
 import CreateAccount from "./CreateAccount";
 import Login from "./Login";
-import Questionnaire from "./Questionnaire";
-import "./App.css";
 import logo from "./studybuds-logo.png";
+import Questionnaire from "./Questionnaire";
+
+// backend imports
+import React from "react";
+import { HashRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { authCheck } from "./CookieHandler";
 
 function App() {
