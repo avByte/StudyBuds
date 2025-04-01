@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './MatchMaking.css';
 import { auth, db } from './firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, addDoc } from 'firebase/firestore';
 
 function MatchMaking() {
   console.log('MatchMaking component initialized');
@@ -56,11 +56,41 @@ function MatchMaking() {
     fetchPotentialMatches();
   }, []);
 
-  const handleSwipe = (direction) => {
+  const createMatch = async (matchedUserId) => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
+    try {
+      // Create a new match document
+      const matchData = {
+        users: [currentUser.uid, matchedUserId],
+        timestamp: new Date(),
+        userDetails: {
+          [currentUser.uid]: {
+            email: currentUser.email,
+            fullName: currentUser.displayName || currentUser.email
+          },
+          [matchedUserId]: {
+            email: potentialMatches[currentIndex].email,
+            fullName: potentialMatches[currentIndex].fullName
+          }
+        }
+      };
+
+      await addDoc(collection(db, 'matches'), matchData);
+      console.log('Match created successfully');
+    } catch (error) {
+      console.error('Error creating match:', error);
+    }
+  };
+
+  const handleSwipe = async (direction) => {
     if (currentIndex < potentialMatches.length) {
       const currentMatch = potentialMatches[currentIndex];
       if (direction === 'right') {
-        // Add to matches
+        // Create match in Firebase
+        await createMatch(currentMatch.id);
+        // Add to local matches state
         setMatches(prev => [...prev, currentMatch]);
       }
       setCurrentIndex(prev => prev + 1);
