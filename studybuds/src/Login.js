@@ -1,6 +1,7 @@
 // src/Login.js
 
 // we do a little tomfoolery
+// external package that's installed
 import Cookies from 'js-cookie';
 
 // imports
@@ -10,19 +11,29 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom"; 
 
 function Login() {
+  // constants
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate(); 
 
+  // handleLogin function for logging in and routing
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+    
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // const userAuth = getAuth();
-      Cookies.set('authToken', auth);
+      // attempt to login
+      const userCredentials = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredentials.user;
 
+      // build login cookie
+      if (user){
+        const idToken = await user.getIdToken();
+        Cookies.set("authToken", idToken, {secure: true, sameSite: "Strict"});
+      }
+
+      // exit login and navigate to calendar
       navigate("/calendar"); 
     } catch (err) {
       setError(err.message);
