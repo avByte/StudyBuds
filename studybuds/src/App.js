@@ -3,7 +3,8 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import CreateAccount from "./CreateAccount";
 import Login from "./Login";
-import Questionnaire from "./Questionnaire"; 
+import Questionnaire from "./Questionnaire";
+import Calendar from "./Calendar";
 import "./App.css";
 import logo from "./studybuds-logo.png";
 
@@ -19,6 +20,7 @@ function App() {
           <div className="nav-links">
             <Link to="/login">Login</Link>
             <Link to="/create-account">Create Account</Link>
+            <Link to="/calendar">Calendar</Link>
           </div>
         </nav>
         
@@ -26,6 +28,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/create-account" element={<CreateAccount />} />
           <Route path="/questionnaire" element={<Questionnaire />} />
+          <Route path="/calendar" element={<Calendar />} />
           <Route path="/" element={<Login />} />
         </Routes>
       </div>

@@ -1,0 +1,377 @@
+.calendar-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.calendar-header h2 {
+  color: #f0f0f0;
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.fc {
+  background: #282c34;
+  color: #f0f0f0;
+  border: none;
+  font-family: inherit;
+}
+
+.fc .fc-toolbar-title {
+  color: #f0f0f0;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.fc .fc-month\/year {
+  color: #f0f0f0;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.fc .fc-button {
+  background-color: #3a3f58;
+  border-color: #3a3f58;
+  color: #f0f0f0;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.fc .fc-button:hover {
+  background-color: #505776;
+  border-color: #505776;
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  background-color: #6c79a8;
+  border-color: #6c79a8;
+}
+
+.fc .fc-col-header-cell {
+  background-color: #3a3f58;
+  color: #f0f0f0;
+  padding: 0.5rem;
+  font-weight: 500;
+}
+
+.fc .fc-col-header-cell-cushion {
+  color: #f0f0f0;
+  text-decoration: none;
+}
+
+.fc .fc-daygrid-day.fc-day-today {
+  background-color: #3a3f58;
+}
+
+.fc .fc-daygrid-day-number {
+  color: #f0f0f0;
+}
+
+.fc .fc-daygrid-day.fc-day-other .fc-daygrid-day-number {
+  color: #777575;
+}
+
+.fc .fc-event {
+  background-color: #6c79a8;
+  border-color: #6c79a8;
+  border-radius: 4px;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+
+.fc .fc-event:hover {
+  background-color: #8a95b8;
+  border-color: #8a95b8;
+}
+
+.window-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.window-content {
+  background: #2a2f3d;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.window-content h3 {
+  margin-top: 0;
+  color: #f0f0f0;
+  font-size: 1.5rem;
+}
+
+.window-content input,
+.window-content textarea,
+.window-content select {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid #3a3f58;
+  border-radius: 4px;
+  background-color: #2a2f3d;
+  color: #f0f0f0;
+  font-size: 1rem;
+}
+
+.window-content textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.window-content input:focus,
+.window-content textarea:focus,
+.window-content select:focus {
+  outline: none;
+  border-color: #9dc4ff;
+}
+
+.window-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.window-buttons button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+  background-color: #3a3f58;
+  color: #f0f0f0;
+}
+
+.window-buttons button:hover {
+  background-color: #505776;
+}
+
+@media (max-width: 768px) {
+  .calendar-container {
+    padding: 1rem;
+  }
+
+  .calendar-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .window-content {
+    width: 95%;
+    padding: 1.5rem;
+  }
+}
+
+.event-details {
+  margin: 1.5rem 0;
+  text-align: left;
+}
+
+.event-details p {
+  margin: 0.75rem 0;
+  color: #f0f0f0;
+  line-height: 1.5;
+}
+
+.event-details strong {
+  color: #9dc4ff;
+  margin-right: 0.5rem;
+}
+
+.delete-btn {
+  background-color: #dc3545 !important;
+  color: #f0f0f0 !important;
+}
+
+.delete-btn:hover {
+  background-color: #c82333 !important;
+}
+
+.split-btn {
+  background-color: #28a745 !important;
+  color: #f0f0f0 !important;
+}
+
+.split-btn:hover {
+  background-color: #218838 !important;
+} 
+
+.time-inputs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.time-input-group {
+  flex: 1;
+}
+
+.time-input-group label {
+  display: block;
+  color: #f0f0f0;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.time-input-group input[type="time"] {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #3a3f58;
+  border-radius: 4px;
+  background-color: #2a2f3d;
+  color: #f0f0f0;
+  font-size: 1rem;
+}
+
+.time-input-group input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+} .split-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.split-content {
+  background-color: #1a1a1a;
+  color: white;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.split-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+.split-buttons button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  background-color: #3a3f58;
+  color: #f0f0f0;
+}
+
+.split-buttons button:hover {
+  background-color: #505776;
+}
+.split-buttons button:nth-child(2) {
+  background-color: #28a745 !important;
+  color: #f0f0f0 !important;
+}
+
+.split-buttons button:nth-child(2):hover {
+  background-color: #218838 !important;
+}
+
+.split-buttons button:first-child {
+  background-color: #3a3f58 !important;
+  color: #f0f0f0 !important;
+}
+
+.split-buttons button:first-child:hover {
+  background-color: #505776 !important;
+}
+
+/* Next/Create button */
+.split-buttons button:nth-child(2) {
+  background-color: #28a745 !important;
+  color: #f0f0f0 !important;
+}
+
+.split-buttons button:nth-child(2):hover {
+  background-color: #218838 !important;
+}
+
+/* Cancel button */
+.split-buttons button:last-child {
+  background-color: #dc3545 !important;
+  color: #f0f0f0 !important;
+}
+
+.split-buttons button:hover {
+  opacity: 0.9;
+}
+
+/* Progress bar for split functionality */
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: #3a3f58;
+  border-radius: 4px;
+  margin-bottom: 2rem;
+}
+
+  .calendar-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .window-content,
+  .split-content {
+    width: 95%;
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+
+  .button-group,
+  .split-buttons,
+  .window-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .button-group button,
+  .split-buttons button,
+  .window-buttons button {
+    width: 100%;
+    min-width: unset;
+    margin: 0;
+  }
+
+  .time-inputs {
+    flex-direction: column;
+  }
+
+  

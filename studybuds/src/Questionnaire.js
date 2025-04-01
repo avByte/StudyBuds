@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { db, auth } from "./firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, updateDoc } from "firebase/firestore";
 
 function Questionnaire() {
   const navigate = useNavigate();
@@ -51,6 +51,9 @@ function Questionnaire() {
   
     try {
       await setDoc(doc(db, "profiles", user.uid), answers);
+      await updateDoc(doc(db, "users", user.uid), {
+        questionnaireCompleted: true,
+      });
       navigate("/calendar");
     } catch (err) {
       alert("Failed to save data. Please try again.");
