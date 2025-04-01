@@ -4,6 +4,7 @@
 import "./App.css";
 import CreateAccount from "./CreateAccount";
 import Login from "./Login";
+import Logout from "./Logout";
 import logo from "./studybuds-logo.png";
 import Questionnaire from "./Questionnaire";
 
@@ -24,6 +25,7 @@ function App() {
             </div>
             <div className="nav-links">
               <Link to="/questionnaire">Questionnaire</Link>
+              <Link to="/logout">Logout</Link>
             </div>
           </nav>
 
