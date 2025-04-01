@@ -57,9 +57,13 @@ const Chat = () => {
     };
 
     const getMatchedUserDetails = (match) => {
+        if (!match || !match.users || !match.userDetails) return null;
+        
         const currentUser = auth.currentUser;
+        if (!currentUser) return null;
+        
         const matchedUserId = match.users.find(id => id !== currentUser.uid);
-        return match.userDetails[matchedUserId];
+        return match.userDetails[matchedUserId] || null;
     };
 
     return (
@@ -73,6 +77,8 @@ const Chat = () => {
                 ) : (
                     matches.map((match) => {
                         const matchedUser = getMatchedUserDetails(match);
+                        if (!matchedUser) return null;
+                        
                         return (
                             <div
                                 key={match.id}
@@ -80,8 +86,8 @@ const Chat = () => {
                                 onClick={() => setSelectedMatch(match)}
                             >
                                 <div className="match-info">
-                                    <div className="match-name">{matchedUser.fullName}</div>
-                                    <div className="match-email">{matchedUser.email}</div>
+                                    <div className="match-name">{matchedUser.fullName || 'Unknown User'}</div>
+                                    <div className="match-email">{matchedUser.email || 'No email'}</div>
                                 </div>
                             </div>
                         );
@@ -93,7 +99,7 @@ const Chat = () => {
                 {selectedMatch ? (
                     <>
                         <div className="chat-header">
-                            <h3>{getMatchedUserDetails(selectedMatch).fullName}</h3>
+                            <h3>{getMatchedUserDetails(selectedMatch)?.fullName || 'Unknown User'}</h3>
                         </div>
                         <div className="messages-container">
                             {messages.length === 0 ? (
