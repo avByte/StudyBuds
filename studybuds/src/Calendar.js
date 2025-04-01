@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'; 
-import FullCalendar from '@fullcalendar/react'; // import 
+import FullCalendar from '@fullcalendar/react'; 
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { auth, db } from './firebase';
@@ -7,15 +7,14 @@ import { collection, addDoc, query, where, getDocs, deleteDoc, doc } from 'fireb
 import './Calendar.css';
 import { useNavigate } from 'react-router-dom';
 import Split from './Split'; 
+import axios from 'axios'; // Import Axios for API calls
 
 function Calendar() {
   const navigate = useNavigate();
-  const [events, setEvents] = useState([]); // stores 
-  const [viewEvent, setViewEvent] = useState(false); // visibility of event detail
-  const [selectedEvent, setSelectedEvent] = useState(null); // stores 
-  const [newEvent, setNewEvent] = useState({ // stores the details of a new event 
-  
-
+  const [events, setEvents] = useState([]); 
+  const [viewEvent, setViewEvent] = useState(false); 
+  const [selectedEvent, setSelectedEvent] = useState(null); 
+  const [newEvent, setNewEvent] = useState({ 
     title: '',
     start: '',
     end: '',
@@ -24,28 +23,31 @@ function Calendar() {
   });
   const [showAddEventWindow, setShowAddEventWindow] = useState(false);
   const [showSplitModal, setShowSplitModal] = useState(false);
-// event fetching
+  const [shareEmail, setShareEmail] = useState(''); // Email to share the event with
+
   useEffect(() => {
     fetchEvents();
   }, []);
 
-  const fetchEvents = async () => { // gets the vents fromf irebase for the logged in user
+  const fetchEvents = async () => {
     const user = auth.currentUser;
     if (!user) return;
 
     const eventsRef = collection(db, 'events');
     const q = query(eventsRef, where('userId', '==', user.uid));
-    const querySnapshot = await getDocs(q);
-    
-    const eventsData = querySnapshot.docs.map(doc => ({
+    const sharedQ = query(eventsRef, where('sharedWith', 'array-contains', user.email));
+
+    const [ownEvents, sharedEvents] = await Promise.all([getDocs(q), getDocs(sharedQ)]);
+
+    const eventsData = [...ownEvents.docs, ...sharedEvents.docs].map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
-    
+
     setEvents(eventsData);
   };
 
-  const handleDateSelect = (selectInfo) => { // opens the 
+  const handleDateSelect = (selectInfo) => { 
     setNewEvent({
       ...newEvent,
       start: selectInfo.startStr,
@@ -54,12 +56,11 @@ function Calendar() {
     setShowAddEventWindow(true);
   };
 
-  const handleEventAdd = async () => { // creates a new event in firestore
+  const handleEventAdd = async () => { 
     const user = auth.currentUser;
     if (!user) return;
 
     try {
-      // Combine the selected date with the chosen time
       const eventDate = new Date(newEvent.start);
       const [hours, minutes] = newEvent.time.split(':');
       eventDate.setHours(parseInt(hours), parseInt(minutes));
@@ -67,7 +68,7 @@ function Calendar() {
       const docRef = await addDoc(collection(db, 'events'), {
         ...newEvent,
         start: eventDate.toISOString(),
-        end: eventDate.toISOString(), // Using same time for end
+        end: eventDate.toISOString(), 
         userId: user.uid,
         createdAt: new Date()
       });
@@ -86,9 +87,9 @@ function Calendar() {
     }
   };
 
-  const handleEventDelete = async () => { // 
-    if (window.confirm('Are you sure you want to delete this event?')) { // confirms if user wants 
-      try { // exception handling
+  const handleEventDelete = async () => { 
+    if (window.confirm('Are you sure you want to delete this event?')) { 
+      try { 
         await deleteDoc(doc(db, 'events', selectedEvent.id));
         setEvents(events.filter(event => event.id !== selectedEvent.id));
         setViewEvent(false);
@@ -109,7 +110,6 @@ function Calendar() {
     if (!user) return;
 
     try {
-        // Add all study events to Firestore
         const addedEvents = [];
         for (const event of studyEvents) {
             const docRef = await addDoc(collection(db, 'events'), {
@@ -120,23 +120,32 @@ function Calendar() {
             addedEvents.push({ id: docRef.id, ...event });
         }
 
-        // Update local events state
         setEvents(prevEvents => [...prevEvents, ...addedEvents]);
-        
-        // Close modals
         setShowSplitModal(false);
         setViewEvent(false);
-        
-        // Show success message
         alert('Study plan has been created and added to your calendar!');
         
     } catch (error) {
         console.error('Error creating study events:', error);
         alert('Failed to create study events');
     }
-};
+  };
 
-  const formatDate = (dateString) => { // formats the date 
+  const handleShareEvent = async (eventId) => {
+    try {
+      const response = await axios.post('http://localhost:5000/share-calendar', {
+        eventId,
+        sharedWith: shareEmail
+      });
+      alert(response.data.message);
+      setShareEmail(''); 
+    } catch (error) {
+      console.error('Error sharing event:', error);
+      alert('Failed to share the event.');
+    }
+  };
+
+  const formatDate = (dateString) => { 
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -146,7 +155,7 @@ function Calendar() {
     });
   };
 
-  const formatTime = (dateString) => { // formats the time
+  const formatTime = (dateString) => { 
     const date = new Date(dateString);
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -160,7 +169,7 @@ function Calendar() {
         <h2>Calendar</h2>
       </div>
       <div className="calendar-wrapper">
-        <FullCalendar // creates the calendar
+        <FullCalendar 
           plugins={[dayGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
           headerToolbar={{
@@ -183,7 +192,7 @@ function Calendar() {
         />
       </div>
 
-      {showAddEventWindow && ( // window for add event 
+      {showAddEventWindow && ( 
         <div className="window-overlay">
           <div className="window-content">
             <h3>Add Event</h3>
@@ -233,7 +242,7 @@ function Calendar() {
         </div>
       )}
 
-      {viewEvent && selectedEvent && ( // window for event details
+      {viewEvent && selectedEvent && ( 
         <div className="window-overlay">
           <div className="window-content">
             <h3>Event Details</h3>
@@ -250,7 +259,6 @@ function Calendar() {
               </button>
               <button className="split-btn" onClick={handleSplitMaterial}>
                 Split Up Course Material
-
               </button>
               <button onClick={() => setViewEvent(false)}>
                 Close
@@ -260,7 +268,7 @@ function Calendar() {
         </div>
       )}
 
-        {showSplitModal && selectedEvent && (
+      {showSplitModal && selectedEvent && (
         <Split
           onClose={() => setShowSplitModal(false)}
           onSubmit={handleStudyPlanSubmit}
@@ -268,9 +276,20 @@ function Calendar() {
         />
       )}
 
-
+      {selectedEvent && (
+        <div className="share-modal">
+          <h3>Share Event</h3>
+          <input
+            type="email"
+            placeholder="Enter email to share with"
+            value={shareEmail}
+            onChange={(e) => setShareEmail(e.target.value)}
+          />
+          <button onClick={() => handleShareEvent(selectedEvent.id)}>Share</button>
+        </div>
+      )}
     </div>
   );
 }
 
-export default Calendar; 
+export default Calendar;
