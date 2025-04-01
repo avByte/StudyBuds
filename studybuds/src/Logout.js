@@ -5,16 +5,19 @@
 */
 
 // imports
+import React, { useState } from "react";
 import { authLogout } from "./CookieHandler";
 import { auth } from "./firebase";
 import { useNavigate} from "react-router-dom";
 
 function Logout(){
+    // constants
+    const [error, setError] = useState("");
+    const navigate = useNavigate();
 
     // attempts to log out, delete the authentication token, then navigates to login
     try {
-        const navigate = useNavigate();
-        signOut(auth).then(() => {
+        auth.signOut(auth).then(() => {
             authLogout();
             navigate("/login");
         })
