@@ -45,6 +45,7 @@ function Navbar() {
 
         {user && (
           <div className="nav-right-links">
+            <Link to="/questionnaire" className="retake-questionnaire">Retake Questionnaire</Link>
             <button onClick={handleLogout}>Logout</button>
           </div>
         )}
