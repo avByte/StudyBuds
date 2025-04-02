@@ -5,12 +5,10 @@ import interactionPlugin from '@fullcalendar/interaction';
 import { auth, db } from './firebase';
 import { collection, addDoc, query, where, getDocs, deleteDoc, doc, getDoc, updateDoc } from 'firebase/firestore';
 import './Calendar.css';
-import { useNavigate } from 'react-router-dom';
 import Split from './Split';
-import { getMatches, acceptMatch, declineMatch } from './Message';
+import { getMatches } from './Message';
 
 function Calendar() {
-  const navigate = useNavigate();
   const [events, setEvents] = useState([]); 
   const [viewEvent, setViewEvent] = useState(false); 
   const [selectedEvent, setSelectedEvent] = useState(null); 
@@ -24,7 +22,6 @@ function Calendar() {
   const [showAddEventWindow, setShowAddEventWindow] = useState(false);
   const [showSplitModal, setShowSplitModal] = useState(false);
   const [shareEmail, setShareEmail] = useState(''); // Email to share the event with
-  const [friends, setFriends] = useState([]);
   const [showShareDropdown, setShowShareDropdown] = useState(false);
   const [acceptedMatches, setAcceptedMatches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +32,6 @@ function Calendar() {
 
   useEffect(() => {
     fetchEvents();
-    fetchFriends();
     fetchAcceptedMatches();
     fetchSharedCalendars();
   }, []);
@@ -58,26 +54,6 @@ function Calendar() {
         setAllEvents(eventsData); // Store all events in allEvents state
     } catch (error) {
         console.error('Error fetching events:', error);
-    }
-  };
-
-  const fetchFriends = async () => {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    try {
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (userDoc.exists() && userDoc.data().friends) {
-        const friendsData = await Promise.all(
-          userDoc.data().friends.map(async (friendId) => {
-            const friendDoc = await getDoc(doc(db, 'users', friendId));
-            return friendDoc.exists() ? { id: friendId, ...friendDoc.data() } : null;
-          })
-        );
-        setFriends(friendsData.filter(friend => friend !== null));
-      }
-    } catch (error) {
-      console.error('Error fetching friends:', error);
     }
   };
 

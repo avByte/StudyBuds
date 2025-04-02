@@ -386,7 +386,8 @@
   width: 100%;
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 1rem;
+  margin-bottom: -3rem;
+  right: -52.5rem;
 }
 
 .share-calendar-btn {
@@ -491,7 +492,8 @@
 
 .calendar-toggle-container {
   position: relative;
-  z-index: 1000;
+  top: 1rem;
+  right: 1rem;
 }
 
 .calendar-toggle-btn {
