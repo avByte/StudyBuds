@@ -82,7 +82,7 @@ function FindPartners() {
           <p>Try lowering the minimum compatibility score or updating your preferences.</p>
         </div>
       ) : (
-        <div className="partners-list">
+        <div className="partners-list">   
           {partners.map((partner) => (
             <div className="partner-card" key={partner.userId}>
               <div className={`compatibility-score ${getScoreClass(partner.compatibilityScore)}`}>

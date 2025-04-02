@@ -132,7 +132,10 @@ export const findCompatiblePartners = async (userId, minCompatibilityScore = 60)
     
     // Sort by compatibility score (highest first)
     return compatiblePartners.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
-  } 
-}
+  } catch (error) {
+    console.error("Error finding compatible partners:", error);
+    return [];
+  }
+};
 
-export default compareQuestionnaire;
+export default CompareQuestionnaire;
