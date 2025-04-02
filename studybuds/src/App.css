@@ -256,3 +256,16 @@ select:focus {
 .retake-questionnaire:hover {
   color: #ffffff;
 }
+
+.form-container-questionnaire {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 400px;
+  margin: 8rem auto;
+  padding: 2rem;
+  background-color: #2b2b2b;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+}

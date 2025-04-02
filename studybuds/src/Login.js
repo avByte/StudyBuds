@@ -23,13 +23,12 @@ function Login() {
   };
 
   return (
-    <div
-      className="login-background"
+    <div className="login-background"
       style={{
         backgroundImage: `url(${backgroundImage})`,
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center center",
-        backgroundSize: "contain",
+        backgroundSize: "cover",
         height: "100vh",
         width: "100vw",
         display: "flex",

@@ -62,60 +62,62 @@ function Questionnaire() {
 
   return (
     <div className="form-container">
-      <h2>Study Buds Questionnaire</h2>
-      <form onSubmit={handleSubmit}>
-        <label>1. How many hours on average do you study per day?</label>
-        <select required value={studyHoursPerDay} onChange={(e) => setStudyHoursPerDay(e.target.value)}>
-          <option value="">Select one</option>
-          <option value="1-3">1-3 hours</option>
-          <option value="4-6">4-6 hours</option>
-          <option value="6-9">6-9 hours</option>
-          <option value=">9">More than 9 hours</option>
-        </select>
+      <div className="form-container-questionnaire">
+        <h2>Study Buds Questionnaire</h2>
+        <form onSubmit={handleSubmit}>
+          <label>1. How many hours on average do you study per day?</label>
+          <select required value={studyHoursPerDay} onChange={(e) => setStudyHoursPerDay(e.target.value)}>
+            <option value="">Select one</option>
+            <option value="1-3">1-3 hours</option>
+            <option value="4-6">4-6 hours</option>
+            <option value="6-9">6-9 hours</option>
+            <option value=">9">More than 9 hours</option>
+          </select>
 
-        <label>2. How many hours a week would you like to study with a partner?</label>
-        <select required value={partnerStudyHours} onChange={(e) => setPartnerStudyHours(e.target.value)}>
-          <option value="">Select one</option>
-          <option value="1-3">1-3 hours</option>
-          <option value="4-6">4-6 hours</option>
-          <option value="6-9">6-9 hours</option>
-          <option value=">9">More than 9 hours</option>
-        </select>
+          <label>2. How many hours a week would you like to study with a partner?</label>
+          <select required value={partnerStudyHours} onChange={(e) => setPartnerStudyHours(e.target.value)}>
+            <option value="">Select one</option>
+            <option value="1-3">1-3 hours</option>
+            <option value="4-6">4-6 hours</option>
+            <option value="6-9">6-9 hours</option>
+            <option value=">9">More than 9 hours</option>
+          </select>
 
-        <label>3. What surrounding environment do you prefer studying in?</label>
-        <select required value={environment} onChange={(e) => setEnvironment(e.target.value)}>
-          <option value="">Select one</option>
-          <option value="Completely silent">Completely silent</option>
-          <option value="Moderately quiet">Moderately quiet</option>
-          <option value="Moderately loud">Moderately loud</option>
-          <option value="Loud room">Loud room</option>
-        </select>
+          <label>3. What surrounding environment do you prefer studying in?</label>
+          <select required value={environment} onChange={(e) => setEnvironment(e.target.value)}>
+            <option value="">Select one</option>
+            <option value="Completely silent">Completely silent</option>
+            <option value="Moderately quiet">Moderately quiet</option>
+            <option value="Moderately loud">Moderately loud</option>
+            <option value="Loud room">Loud room</option>
+          </select>
 
-        <label>4. What studying techniques do you enjoy using?</label>
-        <div className="option-group">
-          {techniquesList.map((technique) => (
-            <button
-              key={technique}
-              type="button"
-              className={studyTechniques.includes(technique) ? "selected" : ""}
-              onClick={() => toggleTechnique(technique)}
-            >
-              {technique}
-            </button>
-          ))}
-        </div>
+          <label>4. What studying techniques do you enjoy using?</label>
+          <div className="option-group">
+            {techniquesList.map((technique) => (
+              <button
+                key={technique}
+                type="button"
+                className={studyTechniques.includes(technique) ? "selected" : ""}
+                onClick={() => toggleTechnique(technique)}
+              >
+                {technique}
+              </button>
+            ))}
+          </div>
 
-        <label>5. What kind of study sessions are you looking to have?</label>
-        <select required value={sessionType} onChange={(e) => setSessionType(e.target.value)}>
-          <option value="">Select one</option>
-          <option value="Interactive">Interactive (discussing concepts, sharing ideas)</option>
-          <option value="Independent">Independent/quiet study</option>
-          <option value="Mixed">A mix of quiet and interactive sessions</option>
-          <option value="Hybrid">Working independently with occasional collaboration</option>
-        </select>
+          <label>5. What kind of study sessions are you looking to have?</label>
+          <select required value={sessionType} onChange={(e) => setSessionType(e.target.value)}>
+            <option value="">Select one</option>
+            <option value="Interactive">Interactive (discussing concepts, sharing ideas)</option>
+            <option value="Independent">Independent/quiet study</option>
+            <option value="Mixed">A mix of quiet and interactive sessions</option>
+            <option value="Hybrid">Working independently with occasional collaboration</option>
+          </select>
 
-        <button type="submit">Finish</button>
-      </form>
+          <button type="submit">Finish</button>
+        </form>
+      </div>
     </div>
   );
 }
