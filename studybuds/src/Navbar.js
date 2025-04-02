@@ -35,12 +35,17 @@ function Navbar() {
               <Link to="/create-account">Create Account</Link>
             </>
           ) : (
-            <Link to="/calendar">Calendar</Link>
+            <>
+              <Link to="/calendar">Calendar</Link>
+              <Link to="/match">Find Study Buddies</Link>
+              <Link to="/chat">Chat</Link>
+            </>
           )}
         </div>
 
         {user && (
           <div className="nav-right-links">
+            <Link to="/questionnaire" className="retake-questionnaire">Retake Questionnaire</Link>
             <button onClick={handleLogout}>Logout</button>
           </div>
         )}

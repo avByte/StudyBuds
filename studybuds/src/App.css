@@ -236,3 +236,23 @@ select:focus {
 .nav-auth-links button:hover {
   color: #ffffff;
 }
+
+.nav-right-links {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-right: 1rem;
+}
+
+.retake-questionnaire {
+  color: #9dc4ff;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1rem;
+  transition: color 0.2s ease;
+  padding-right: 0.5rem;
+}
+
+.retake-questionnaire:hover {
+  color: #ffffff;
+}
