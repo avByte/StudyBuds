@@ -7,6 +7,7 @@ import { collection, addDoc, query, where, getDocs, deleteDoc, doc, getDoc, upda
 import './Calendar.css';
 import { useNavigate } from 'react-router-dom';
 import Split from './Split';
+import { getMatches, acceptMatch, declineMatch } from './Message';
 
 function Calendar() {
   const navigate = useNavigate();
@@ -25,28 +26,39 @@ function Calendar() {
   const [shareEmail, setShareEmail] = useState(''); // Email to share the event with
   const [friends, setFriends] = useState([]);
   const [showShareDropdown, setShowShareDropdown] = useState(false);
+  const [acceptedMatches, setAcceptedMatches] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCalendarToggle, setShowCalendarToggle] = useState(false);
+  const [sharedCalendars, setSharedCalendars] = useState([]);
+  const [activeCalendar, setActiveCalendar] = useState(null);
+  const [allEvents, setAllEvents] = useState([]);
 
   useEffect(() => {
     fetchEvents();
     fetchFriends();
+    fetchAcceptedMatches();
+    fetchSharedCalendars();
   }, []);
 
   const fetchEvents = async () => {
     const user = auth.currentUser;
     if (!user) return;
 
-    const eventsRef = collection(db, 'events');
-    const q = query(eventsRef, where('userId', '==', user.uid));
-    const sharedQ = query(eventsRef, where('sharedWith', 'array-contains', user.email));
+    try {
+        const eventsRef = collection(db, 'events');
+        const q = query(eventsRef, where('userId', '==', user.uid));
+        const querySnapshot = await getDocs(q);
+        
+        const eventsData = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
 
-    const [ownEvents, sharedEvents] = await Promise.all([getDocs(q), getDocs(sharedQ)]);
-
-    const eventsData = [...ownEvents.docs, ...sharedEvents.docs].map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-
-    setEvents(eventsData);
+        setEvents(eventsData);
+        setAllEvents(eventsData); // Store all events in allEvents state
+    } catch (error) {
+        console.error('Error fetching events:', error);
+    }
   };
 
   const fetchFriends = async () => {
@@ -66,6 +78,56 @@ function Calendar() {
       }
     } catch (error) {
       console.error('Error fetching friends:', error);
+    }
+  };
+
+  const fetchAcceptedMatches = async () => {
+    try {
+      const matches = await getMatches();
+      // Filter only accepted matches
+      const accepted = matches.filter(match => match.status === 'accepted');
+      setAcceptedMatches(accepted);
+    } catch (error) {
+      console.error('Error fetching matches:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSharedCalendars = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+        console.log('No user logged in');
+        return;
+    }
+
+    try {
+        console.log('Fetching shared calendars for user:', user.uid);
+        // Fetch calendars where user is the recipient
+        const sharedRef = collection(db, 'sharedCalendars');
+        const q = query(sharedRef, where('sharedWith', '==', user.uid));
+        const querySnapshot = await getDocs(q);
+        
+        console.log('Found shared calendars:', querySnapshot.size);
+        const calendars = [];
+        for (const docSnapshot of querySnapshot.docs) {
+            const data = docSnapshot.data();
+            console.log('Calendar data:', data);
+            const ownerDoc = await getDoc(doc(db, 'users', data.ownerId));
+            if (ownerDoc.exists()) {
+                calendars.push({
+                    id: docSnapshot.id,
+                    ownerId: data.ownerId,
+                    ownerName: ownerDoc.data().fullName,
+                    status: data.status || 'pending',
+                    events: data.events || []
+                });
+            }
+        }
+        console.log('Processed calendars:', calendars);
+        setSharedCalendars(calendars);
+    } catch (error) {
+        console.error('Error fetching shared calendars:', error);
     }
   };
 
@@ -181,37 +243,86 @@ function Calendar() {
 
   const handleShareCalendar = async (friendId) => {
     const user = auth.currentUser;
-    if (!user) return;
+    if (!user) {
+        console.log('No user logged in');
+        return;
+    }
 
     try {
-      const friendDoc = await getDoc(doc(db, 'users', friendId));
-      if (friendDoc.exists()) {
-        const friendEmail = friendDoc.data().email;
+        console.log('Sharing calendar with:', friendId);
+        // Create a shared calendar document
+        const sharedRef = await addDoc(collection(db, 'sharedCalendars'), {
+            ownerId: user.uid,
+            sharedWith: friendId,
+            status: 'pending',
+            createdAt: new Date()
+        });
+
+        console.log('Created shared calendar document:', sharedRef.id);
+
+        // Share all current events
         const eventsRef = collection(db, 'events');
         const q = query(eventsRef, where('userId', '==', user.uid));
         const userEvents = await getDocs(q);
+        
+        const events = userEvents.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
 
-        // Share all events with the friend
-        const sharePromises = userEvents.docs.map(async (eventDoc) => {
-          const eventData = eventDoc.data();
-          if (!eventData.sharedWith) {
-            eventData.sharedWith = [];
-          }
-          if (!eventData.sharedWith.includes(friendEmail)) {
-            eventData.sharedWith.push(friendEmail);
-            await updateDoc(doc(db, 'events', eventDoc.id), {
-              sharedWith: eventData.sharedWith
-            });
-          }
+        console.log('Sharing events:', events.length);
+
+        await updateDoc(doc(db, 'sharedCalendars', sharedRef.id), {
+            events: events,
+            status: 'pending'
         });
 
-        await Promise.all(sharePromises);
+        console.log('Updated shared calendar with events');
         alert('Calendar shared successfully!');
         setShowShareDropdown(false);
-      }
+        fetchSharedCalendars(); // Refresh the shared calendars list
     } catch (error) {
-      console.error('Error sharing calendar:', error);
-      alert('Failed to share calendar');
+        console.error('Error sharing calendar:', error);
+        alert('Failed to share calendar');
+    }
+  };
+
+  const handleAcceptSharedCalendar = async (calendarId) => {
+    try {
+      await updateDoc(doc(db, 'sharedCalendars', calendarId), {
+        status: 'accepted'
+      });
+      fetchSharedCalendars();
+    } catch (error) {
+      console.error('Error accepting shared calendar:', error);
+      alert('Failed to accept shared calendar');
+    }
+  };
+
+  const handleDeclineSharedCalendar = async (calendarId) => {
+    try {
+      await deleteDoc(doc(db, 'sharedCalendars', calendarId));
+      fetchSharedCalendars();
+    } catch (error) {
+      console.error('Error declining shared calendar:', error);
+      alert('Failed to decline shared calendar');
+    }
+  };
+
+  const handleToggleCalendar = (calendar) => {
+    if (activeCalendar?.id === calendar.id) {
+        // If toggling off, just show your own events
+        setActiveCalendar(null);
+        setEvents(allEvents);
+    } else {
+        // If toggling on, show your events plus the shared calendar's events
+        setActiveCalendar(calendar);
+        const sharedEvents = calendar.events.map(event => ({
+            ...event,
+            backgroundColor: '#dc3545', // Red color for shared events
+            borderColor: '#dc3545'
+        }));
+        setEvents([...allEvents, ...sharedEvents]);
     }
   };
 
@@ -237,30 +348,82 @@ function Calendar() {
     <div className="calendar-container">
       <div className="calendar-header">
         <h2>Calendar</h2>
-        <div className="share-calendar-container">
-          <button 
-            className="share-calendar-btn"
-            onClick={() => setShowShareDropdown(!showShareDropdown)}
-          >
-            Share Calendar
-          </button>
-          {showShareDropdown && (
-            <div className="share-dropdown">
-              {friends.length > 0 ? (
-                friends.map(friend => (
-                  <button
-                    key={friend.id}
-                    className="friend-share-btn"
-                    onClick={() => handleShareCalendar(friend.id)}
-                  >
-                    {friend.fullName}
-                  </button>
-                ))
-              ) : (
-                <p className="no-friends">No friends to share with</p>
-              )}
-            </div>
-          )}
+        <div className="calendar-actions">
+          <div className="calendar-toggle-container">
+            <button 
+              className="calendar-toggle-btn"
+              onClick={() => setShowCalendarToggle(!showCalendarToggle)}
+            >
+              Calendar Toggle
+            </button>
+            {showCalendarToggle && (
+              <div className="calendar-toggle-dropdown">
+                {sharedCalendars.length === 0 ? (
+                  <div className="no-shared">No shared calendars</div>
+                ) : (
+                  sharedCalendars.map(calendar => (
+                    <div key={calendar.id} className="shared-calendar-item">
+                      <span>{calendar.ownerName}</span>
+                      {calendar.status === 'pending' ? (
+                        <div className="calendar-actions">
+                          <button 
+                            className="accept-btn"
+                            onClick={() => handleAcceptSharedCalendar(calendar.id)}
+                          >
+                            Accept
+                          </button>
+                          <button 
+                            className="decline-btn"
+                            onClick={() => handleDeclineSharedCalendar(calendar.id)}
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      ) : (
+                        <button 
+                          className={`toggle-btn ${activeCalendar?.id === calendar.id ? 'active' : ''}`}
+                          onClick={() => handleToggleCalendar(calendar)}
+                        >
+                          {activeCalendar?.id === calendar.id ? 'Hide' : 'Show'}
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+          <div className="share-calendar-container">
+            <button 
+              className="share-calendar-btn"
+              onClick={() => setShowShareDropdown(!showShareDropdown)}
+            >
+              Share Calendar
+            </button>
+            {showShareDropdown && (
+              <div className="share-dropdown">
+                {loading ? (
+                  <div className="loading">Loading...</div>
+                ) : acceptedMatches.length === 0 ? (
+                  <div className="no-matches">No accepted matches to share with</div>
+                ) : (
+                  acceptedMatches.map(match => {
+                    const matchedUser = match.users.find(uid => uid !== auth.currentUser?.uid);
+                    const userDetails = match.userDetails[matchedUser];
+                    return (
+                      <button
+                        key={match.id}
+                        className="friend-share-btn"
+                        onClick={() => handleShareCalendar(matchedUser)}
+                      >
+                        {userDetails.fullName}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div className="calendar-wrapper">
