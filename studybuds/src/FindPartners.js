@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { auth } from "./firebase";
-import { findCompatiblePartners } from "./MatchingService";
+import { findCompatiblePartners } from "./comparequestionnaire";
 import "./FindPartners.css";
+
 
 function FindPartners() {
   const [partners, setPartners] = useState([]);

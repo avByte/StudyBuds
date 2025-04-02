@@ -39,6 +39,7 @@ function Navbar() {
               <Link to="/calendar">Calendar</Link>
               <Link to="/match">Find Study Buddies</Link>
               <Link to="/chat">Chat</Link>
+              <Link to="/FindPartners">Potential Buddies</Link>
             </>
           )}
         </div>

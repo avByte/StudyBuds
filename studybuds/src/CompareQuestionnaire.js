@@ -137,4 +137,3 @@ export const findCompatiblePartners = async (userId, minCompatibilityScore = 60)
     return [];
   }
 };
-
