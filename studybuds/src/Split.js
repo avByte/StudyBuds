@@ -150,11 +150,12 @@ const Split = ({ onClose, onSubmit, selectedEvent }) => {
                 
                 {error && <div className="error-message">{error}</div>}
 
-                {currentQuestion.type === "text" && (
+                {currentQuestion.type === "number" && (
                     <input
-                        type="text"
+                        type="number"
                         value={answers[currentQuestion.field]}
-                        onChange={(e) => handleInputChange(currentQuestion.field, e.target.value)}
+                        onChange={(e) => 
+                            handleInputChange(currentQuestion.field, e.target.value)}
                         required
                     />
                 )}
