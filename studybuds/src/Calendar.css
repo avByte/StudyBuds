@@ -280,64 +280,73 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
+
 .split-buttons {
   display: flex;
   gap: 1rem;
-  justify-content: flex-end;
+  justify-content: space-between;
   margin-top: 2rem;
 }
 
+/* General button styles */
 .split-buttons button {
+  flex: 1;
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-weight: 500;
   transition: background-color 0.2s;
-  background-color: #3a3f58;
+
   color: #f0f0f0;
 }
 
-.split-buttons button:hover {
+.split-buttons button.selected {
+  background-color: #1ab7aa;
+  color: white;
+  font-weight: bold;
+}
+
+.split-buttons button.selected:hover {
+  background-color: #159c93;
+}
+
+/* Back Button */
+.back-button button {
+  background-color: #3a3f58;
+}
+
+.back-button button:hover {
   background-color: #505776;
 }
 
-.split-buttons button:nth-child(2) {
-  background-color: #28a745 !important;
-  color: #f0f0f0 !important;
+/* Next Button */
+.next-button button {
+  background-color: #28a745;
 }
 
-.split-buttons button:nth-child(2):hover {
-  background-color: #218838 !important;
+.next-button button:hover {
+  background-color: #218838;
 }
 
-.split-buttons button:first-child {
-  background-color: #3a3f58 !important;
-  color: #f0f0f0 !important;
+/* Cancel Button */
+.cancel-button {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
 }
 
-.split-buttons button:first-child:hover {
-  background-color: #505776 !important;
+.cancel-button button {
+  width: 100%;
+  border:none;
+  color: white;
+  background-color: red;
+  outline: none;    
+  box-shadow: none;
 }
 
-/* Next/Create button */
-.split-buttons button:nth-child(2) {
-  background-color: #28a745 !important;
-  color: #f0f0f0 !important;
-}
-
-.split-buttons button:nth-child(2):hover {
-  background-color: #218838 !important;
-}
-
-/* Cancel button */
-.split-buttons button:last-child {
-  background-color: #dc3545 !important;
-  color: #f0f0f0 !important;
-}
-
-.split-buttons button:hover {
-  opacity: 0.9;
+.cancel-button button:hover {
+  background-color: darkred;
 }
 
 /* Progress bar for split functionality */

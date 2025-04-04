@@ -27,21 +27,27 @@ const Split = ({ onClose, onSubmit, selectedEvent }) => {
             text: "How often do you want to study this? (days per week)",
             type: "select",
             field: "frequency",
-            options: ["1", "2", "3", "4", "5", "6", "7"]
+            options: ["1", "2", "3", "4", "5", "6", "7"], // Added comma here
+            validation: (value) => value !== '',
+            errorMessage: "Please select a frequency."
         },
         {
             id: 3,
             text: "How long will each session be? (hours)",
             type: "select",
             field: "duration",
-            options: ["0.5", "1", "1.5", "2", "2.5", "3"]
+            options: ["0.5", "1", "1.5", "2", "2.5", "3"],
+            validation: (value) => value !== '',
+            errorMessage: "Please select a duration."
         },
         {
             id: 4,
             text: "What is your preferred study time?",
             type: "select",
             field: "preferredTime",
-            options: ["Morning", "Afternoon", "Evening", "Night"]
+            options: ["Morning", "Afternoon", "Evening", "Night"],
+            validation: (value) => value !== '',
+            errorMessage: "Please select a preffered study time."
         }
     ];
 
@@ -55,6 +61,14 @@ const Split = ({ onClose, onSubmit, selectedEvent }) => {
 
     const validateAndProceed = () => {
         const currentQuestion = questions[currentStep];
+        const value = answers[currentQuestion.field];
+        if (currentQuestion.validation && !currentQuestion.validation(value)) {
+            setError(currentQuestion.errorMessage);
+            return;
+        }
+
+        setError('');
+
         if (currentStep < questions.length - 1) {
             setCurrentStep(prev => prev + 1);
         } else {
@@ -68,6 +82,8 @@ const Split = ({ onClose, onSubmit, selectedEvent }) => {
             setError("User not authenticated");
             return;
         }
+
+        
 
         try {
             const startDate = new Date(selectedEvent.start);
@@ -152,7 +168,8 @@ const Split = ({ onClose, onSubmit, selectedEvent }) => {
 
                 {currentQuestion.type === "number" && (
                     <input
-                        type="number"
+                        type="number
+                "
                         value={answers[currentQuestion.field]}
                         onChange={(e) => 
                             handleInputChange(currentQuestion.field, e.target.value)}
@@ -161,7 +178,7 @@ const Split = ({ onClose, onSubmit, selectedEvent }) => {
                 )}
 
                 {currentQuestion.type === "select" && (
-                    <div className="button-group">
+                    <div className="split-buttons">
                         {currentQuestion.options.map(option => (
                             <button
                                 key={option}
@@ -174,17 +191,25 @@ const Split = ({ onClose, onSubmit, selectedEvent }) => {
                     </div>
                 )}
 
-                <div className="split-buttons">
-                    {currentStep > 0 && (
-                        <button onClick={() => setCurrentStep(prev => prev - 1)}>
-                            Back
-                        </button>
-                    )}
-                    <button onClick={validateAndProceed}>
-                        {currentStep === questions.length - 1 ? 'Create Study Plan' : 'Next'}
-                    </button>
-                    <button onClick={onClose}>Cancel</button>
+            <div className="split-buttons">
+                {currentStep > 0 && (
+                    <div className="back-button">
+            <button onClick={() => setCurrentStep(prev => prev - 1)}>Back</button>
                 </div>
+                )}
+
+                <div className="next-button">
+             <button onClick={validateAndProceed}>
+            {currentStep === questions.length - 1 ? 'Create Study Plan' : 'Next'}
+            </button>
+        </div>
+        </div>
+
+        <div className="cancel-button">
+            <button onClick={onClose}>Cancel</button>
+            </div>
+
+
             </div>
         </div>
     );
