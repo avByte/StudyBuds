@@ -112,6 +112,9 @@ const Split = ({ onClose, onSubmit, selectedEvent }) => {
                         case 'Night':
                             startHour = 20;
                             break;
+                        default:
+                            startHour = 9; // Default to morning if no preference is set
+                            break;
                     }
                     
                     eventDate.setHours(startHour, 0, 0);

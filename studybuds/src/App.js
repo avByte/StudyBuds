@@ -9,7 +9,6 @@ import MatchMaking from "./matchMaking";
 import Chat from "./chat";
 import FindPartners from "./FindPartners";
 import "./App.css";
-import logo from "./studybuds-logo.png";
 import Navbar from "./Navbar";
 import ProtectedRoute from "./ProtectedRoute";
 
